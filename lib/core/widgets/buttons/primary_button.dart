@@ -3,14 +3,14 @@ import '../../constants/app_colors.dart';
 
 class PrimaryButton extends StatelessWidget {
   final String text;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed; // Cambiar a nullable
   final bool isFullWidth;
   final bool isLoading;
 
   const PrimaryButton({
     super.key,
     required this.text,
-    required this.onPressed,
+    required this.onPressed, // Ahora acepta null
     this.isFullWidth = true,
     this.isLoading = false,
   });
@@ -20,7 +20,7 @@ class PrimaryButton extends StatelessWidget {
     return SizedBox(
       width: isFullWidth ? double.infinity : null,
       child: ElevatedButton(
-        onPressed: isLoading ? null : onPressed,
+        onPressed: isLoading ? null : onPressed, // Esto ahora funciona
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.blue600,
           foregroundColor: Colors.white,
