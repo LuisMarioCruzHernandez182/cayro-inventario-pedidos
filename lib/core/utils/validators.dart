@@ -6,11 +6,9 @@ class Validators {
 
     final input = value.trim();
 
-    // Email regex
     final emailRegex = RegExp(
       r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
     );
-    // Teléfono (10 dígitos)
     final phoneRegex = RegExp(r'^\d{10}$');
 
     if (!emailRegex.hasMatch(input) && !phoneRegex.hasMatch(input)) {
