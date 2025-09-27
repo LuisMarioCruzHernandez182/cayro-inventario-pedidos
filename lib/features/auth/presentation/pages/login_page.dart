@@ -1,41 +1,47 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/widgets/buttons/primary_button.dart';
+import '../../../../app/di/injection_container.dart';
+import '../bloc/auth_bloc.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => sl<AuthBloc>(),
+      child: const LoginView(),
+    );
+  }
 }
 
-class _LoginPageState extends State<LoginPage> {
+class LoginView extends StatefulWidget {
+  const LoginView({super.key});
+
+  @override
+  State<LoginView> createState() => _LoginViewState();
+}
+
+class _LoginViewState extends State<LoginView> {
   final _formKey = GlobalKey<FormState>();
   final _userController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _isLoading = false;
   bool _obscurePassword = true;
 
-  void _handleLogin() async {
+  void _handleLogin() {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    setState(() => _isLoading = true);
-
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (!mounted) return;
-
-    setState(() => _isLoading = false);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Login exitoso'),
-        backgroundColor: Colors.green,
+    context.read<AuthBloc>().add(
+      LoginRequested(
+        identifier: _userController.text.trim(),
+        password: _passwordController.text,
       ),
     );
   }
@@ -54,7 +60,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: true, // ✅ evita overflow con teclado
+      resizeToAvoidBottomInset: true,
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -66,7 +72,6 @@ class _LoginPageState extends State<LoginPage> {
         child: SafeArea(
           child: Column(
             children: [
-              // 🔹 Parte azul con scroll
               Expanded(
                 flex: 4,
                 child: SingleChildScrollView(
@@ -139,7 +144,6 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
 
-              // 🔹 Parte blanca con scroll independiente
               Expanded(
                 flex: 4,
                 child: Container(
@@ -157,78 +161,98 @@ class _LoginPageState extends State<LoginPage> {
                       physics: const BouncingScrollPhysics(),
                       keyboardDismissBehavior:
                           ScrollViewKeyboardDismissBehavior.onDrag,
-                      child: Form(
-                        key: _formKey,
-                        autovalidateMode: AutovalidateMode
-                            .onUserInteraction, // ✅ valida mientras escribes
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Center(
-                              child: Text(
-                                AppStrings.systemAccess,
+                      child: BlocListener<AuthBloc, AuthState>(
+                        listener: (context, state) {
+                          if (state is AuthAuthenticated) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Login exitoso'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                            context.go('/main');
+                          } else if (state is AuthError) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(state.message),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                        child: Form(
+                          key: _formKey,
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Center(
+                                child: Text(
+                                  AppStrings.systemAccess,
+                                  style: TextStyle(
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.gray900,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                AppStrings.loginInstructions,
                                 style: TextStyle(
-                                  fontSize: 26,
+                                  fontSize: 16,
+                                  color: AppColors.gray600,
+                                  height: 1.4,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 20),
+                              Text(
+                                'Correo o Teléfono',
+                                style: TextStyle(
+                                  fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   color: AppColors.gray900,
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              AppStrings.loginInstructions,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: AppColors.gray600,
-                                height: 1.4,
+                              const SizedBox(height: 8),
+                              _buildTextField(
+                                controller: _userController,
+                                hint: 'ejemplo@correo.com o 5512345678',
+                                validator: Validators.validateUser,
                               ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 20),
+                              const SizedBox(height: 16),
 
-                            // ✅ Usuario (correo o teléfono)
-                            Text(
-                              'Correo o Teléfono',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.gray900,
+                              Text(
+                                'Contraseña',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.gray900,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            _buildTextField(
-                              controller: _userController,
-                              hint: 'ejemplo@correo.com o 5512345678',
-                              validator: Validators.validateUser,
-                            ),
-                            const SizedBox(height: 16),
-
-                            // ✅ Password
-                            Text(
-                              'Contraseña',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.gray900,
+                              const SizedBox(height: 8),
+                              _buildTextField(
+                                controller: _passwordController,
+                                hint: '••••••••',
+                                validator: Validators.validatePassword,
+                                isPassword: true,
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            _buildTextField(
-                              controller: _passwordController,
-                              hint: '••••••••',
-                              validator: Validators.validatePassword,
-                              isPassword: true,
-                            ),
-                            const SizedBox(height: 24),
+                              const SizedBox(height: 24),
 
-                            // ✅ Botón
-                            PrimaryButton(
-                              text: AppStrings.login,
-                              onPressed: _isLoading ? null : _handleLogin,
-                              isLoading: _isLoading,
-                            ),
-                            const SizedBox(height: 10),
-                          ],
+                              BlocBuilder<AuthBloc, AuthState>(
+                                builder: (context, state) {
+                                  final isLoading = state is AuthLoading;
+                                  return PrimaryButton(
+                                    text: AppStrings.login,
+                                    onPressed: isLoading ? null : _handleLogin,
+                                    isLoading: isLoading,
+                                  );
+                                },
+                              ),
+                              const SizedBox(height: 10),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -242,7 +266,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // 🔹 Helper para textfields
   Widget _buildTextField({
     required TextEditingController controller,
     required String hint,
