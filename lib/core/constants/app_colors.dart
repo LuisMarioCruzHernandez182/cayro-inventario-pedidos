@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   // Blue palette (Tailwind Blue 600)
-  static const Color blue600 = Color(0xFF2563EB);
+  static const Color blue600 = Color(0xFF4F46E5);
   static const Color blue500 = Color(0xFF3B82F6);
-  static const Color blue400 = Color(0xFF60A5FA);
+  static const Color blue400 = Color(0xFF2563EB);
   
   // Gray palette
   static const Color gray50 = Color(0xFFF9FAFB);

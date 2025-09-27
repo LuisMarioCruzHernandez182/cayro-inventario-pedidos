@@ -15,11 +15,7 @@ class HomePage extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF4F46E5), // Deep blue
-              Color(0xFF3B82F6), // Medium blue
-              Color(0xFF2563EB), // Lighter blue
-            ],
+            colors: [AppColors.blue600, AppColors.blue500, AppColors.blue400],
           ),
         ),
         child: SafeArea(
