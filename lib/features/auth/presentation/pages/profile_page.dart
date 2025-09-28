@@ -271,9 +271,9 @@ class _ProfilePageState extends State<ProfilePage> {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: const Text(
-                        'Administradora de Inventario',
+                        'Administrador de Inventario',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: Colors.blueGrey,
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
