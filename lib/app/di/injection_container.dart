@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/network/http_client.dart';
 import '../../core/constants/app_constants.dart';
 
-// Auth
 import '../../features/auth/data/datasources/auth_local_datasource.dart';
 import '../../features/auth/data/datasources/auth_remote_datasource.dart';
 import '../../features/auth/data/repositories/auth_repository_impl.dart';
@@ -15,7 +14,6 @@ import '../../features/auth/domain/usecases/logout_usecase.dart';
 import '../../features/auth/domain/usecases/get_current_user_usecase.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 
-// Stats
 import '../../features/stats/data/datasources/stats_remote_datasource.dart';
 import '../../features/stats/data/repositories/stats_repository_impl.dart';
 import '../../features/stats/domain/repositories/stats_repository.dart';
@@ -35,7 +33,6 @@ import '../../features/inventory/presentation/bloc/inventory_bloc.dart';
 final sl = GetIt.instance;
 
 Future<void> init() async {
-  // Core
   final sharedPreferences = await SharedPreferences.getInstance();
   sl.registerLazySingleton<SharedPreferences>(() => sharedPreferences);
   sl.registerLazySingleton<http.Client>(() => http.Client());
@@ -51,9 +48,6 @@ Future<void> init() async {
     ),
   );
 
-  // ============================
-  // Auth
-  // ============================
   sl.registerLazySingleton<AuthRemoteDataSource>(
     () => AuthRemoteDataSourceImpl(
       client: sl<HttpClient>(),
@@ -86,9 +80,6 @@ Future<void> init() async {
     ),
   );
 
-  // ============================
-  // Stats
-  // ============================
   sl.registerLazySingleton<StatsRemoteDataSource>(
     () => StatsRemoteDataSourceImpl(
       client: sl<HttpClient>(),
@@ -110,9 +101,6 @@ Future<void> init() async {
     ),
   );
 
-  // ============================
-  // Inventory
-  // ============================
   sl.registerLazySingleton<InventoryRemoteDataSource>(
     () => InventoryRemoteDataSourceImpl(
       client: sl<HttpClient>(),

@@ -6,13 +6,15 @@ class PrimaryButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final bool isFullWidth;
   final bool isLoading;
+  final Color? backgroundColor;
 
   const PrimaryButton({
     super.key,
     required this.text,
-    required this.onPressed, 
+    required this.onPressed,
     this.isFullWidth = true,
     this.isLoading = false,
+    this.backgroundColor,
   });
 
   @override
@@ -22,7 +24,7 @@ class PrimaryButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.blue600,
+          backgroundColor: backgroundColor ?? AppColors.blue600,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
