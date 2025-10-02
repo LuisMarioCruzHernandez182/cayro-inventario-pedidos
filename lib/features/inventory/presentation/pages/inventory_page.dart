@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:stock_control_app/features/inventory/presentation/bloc/inventory_event.dart';
+import 'package:stock_control_app/features/inventory/presentation/bloc/inventory_state.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../app/di/injection_container.dart';
+import '../bloc/inventory_bloc.dart';
+import '../widgets/inventory_card.dart';
+import '../widgets/compact_inventory_stats.dart';
+import '../widgets/search_bar_with_button.dart';
+import '../widgets/pagination_info.dart';
+import '../widgets/pagination_controls.dart';
 
 class InventoryPage extends StatefulWidget {
   const InventoryPage({super.key});
@@ -13,27 +22,58 @@ class InventoryPage extends StatefulWidget {
 
 class _InventoryPageState extends State<InventoryPage> {
   final TextEditingController _searchController = TextEditingController();
+  late InventoryBloc _inventoryBloc;
+  final ScrollController _scrollController = ScrollController();
 
-  final List<Product> _products = [
-    Product(
-      id: 'UNI-001',
-      name: 'Uniforme Escolar Completo',
-      category: 'Uniformes Escolares',
-      price: 450,
-      stock: 25,
-      status: ProductStatus.inStock,
-      image: 'assets/images/uniform_school.png',
-    ),
-    Product(
-      id: 'POL-002',
-      name: 'Camisa Polo Empresarial',
-      category: 'Uniformes Corporativos',
-      price: 280,
-      stock: 45,
-      status: ProductStatus.inStock,
-      image: 'assets/images/polo_shirt.png',
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _inventoryBloc = sl<InventoryBloc>()
+      ..add(const LoadInventoryWithStats(page: 1));
+
+    _inventoryBloc.stream.listen((state) {});
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _scrollController.dispose();
+    _inventoryBloc.close();
+    super.dispose();
+  }
+
+  void _onSearch() {
+    final query = _searchController.text.trim();
+    _inventoryBloc.add(SearchInventoryWithButton(query: query));
+  }
+
+  void _onPageChanged(int page) {
+    final currentState = _inventoryBloc.state;
+    String? currentSearch;
+
+    if (currentState is InventoryWithStatsLoaded) {
+      currentSearch = currentState.currentSearch;
+    }
+
+    _scrollToTop();
+
+    _inventoryBloc.add(NavigateToPage(page: page, search: currentSearch));
+  }
+
+  void _scrollToTop() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  void _onClearSearch() {
+    _searchController.clear();
+    _inventoryBloc.add(const ClearSearch());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +90,10 @@ class _InventoryPageState extends State<InventoryPage> {
           return _buildLoadingState();
         }
 
-        return _buildInventoryContent(context);
+        return BlocProvider.value(
+          value: _inventoryBloc,
+          child: _buildInventoryContent(context),
+        );
       },
     );
   }
@@ -83,25 +126,26 @@ class _InventoryPageState extends State<InventoryPage> {
   }
 
   Widget _buildInventoryContent(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [AppColors.blue600, AppColors.blue500, AppColors.blue400],
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColors.blue600, AppColors.blue500, AppColors.blue400],
+          ),
         ),
-      ),
-      child: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              flex: 1,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        child: SafeArea(
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24.0,
+                  vertical: 20,
+                ),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const SizedBox(height: 20),
                     const Text(
                       'Inventario',
                       style: TextStyle(
@@ -112,11 +156,11 @@ class _InventoryPageState extends State<InventoryPage> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       'Gestión de productos y stock',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.white70,
+                        color: Colors.white,
                         fontWeight: FontWeight.w300,
                       ),
                       textAlign: TextAlign.center,
@@ -124,378 +168,308 @@ class _InventoryPageState extends State<InventoryPage> {
                   ],
                 ),
               ),
-            ),
-            Expanded(
-              flex: 6,
-              child: Container(
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(32),
-                    topRight: Radius.circular(32),
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
-                  child: SingleChildScrollView(
-                    physics: const ClampingScrollPhysics(),
-                    child: Column(
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.gray50,
-                            borderRadius: BorderRadius.circular(16),
-                            // Sombra muy suave
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x1A000000), // 10% opacity
-                                blurRadius: 4,
-                                offset: Offset(0, 1),
-                              ),
-                            ],
-                          ),
-                          child: TextField(
-                            controller: _searchController,
-                            decoration: InputDecoration(
-                              hintText: 'Buscar productos, SKU o categoría...',
-                              hintStyle: TextStyle(color: AppColors.gray500),
-                              prefixIcon: Icon(
-                                Icons.search,
-                                color: AppColors.gray500,
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 16,
-                              ),
-                            ),
-                          ),
-                        ),
 
-                        const SizedBox(height: 20),
-
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildMainStatCard(
-                                '6',
-                                'Total Productos',
-                                '4 disponibles',
-                                AppColors.blue100,
-                                AppColors.blue600,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _buildMainStatCard(
-                                '\$31,110',
-                                'Valor Total',
-                                'Inventario actual',
-                                AppColors.green100,
-                                AppColors.green600,
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildStatusCard(
-                                '4',
-                                'En Stock',
-                                Icons.check_circle,
-                                AppColors.green100,
-                                AppColors.green600,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _buildStatusCard(
-                                '1',
-                                'Poco Stock',
-                                Icons.warning,
-                                AppColors.amber100,
-                                AppColors.amber600,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _buildStatusCard(
-                                '1',
-                                'Agotados',
-                                Icons.cancel,
-                                AppColors.red100,
-                                AppColors.red600,
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        ...(_products
-                            .map((product) => _buildProductCard(product))
-                            .toList()),
-                      ],
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(32),
+                      topRight: Radius.circular(32),
                     ),
+                  ),
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+                        child: BlocBuilder<InventoryBloc, InventoryState>(
+                          builder: (context, state) {
+                            final isLoading =
+                                state is InventoryLoading ||
+                                (state is InventoryWithStatsLoaded &&
+                                    state.isLoadingMore);
+
+                            return SearchBarWithButton(
+                              controller: _searchController,
+                              onSearch: _onSearch,
+                              onClear: _onClearSearch,
+                              isLoading: isLoading,
+                            );
+                          },
+                        ),
+                      ),
+
+                      Expanded(
+                        child: BlocBuilder<InventoryBloc, InventoryState>(
+                          builder: (context, state) {
+                            if (state is InventoryLoading) {
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
+                            }
+
+                            if (state is InventoryWithStatsLoaded) {
+                              if (state.products.isEmpty) {
+                                return _buildEmptyState();
+                              }
+
+                              return RefreshIndicator(
+                                onRefresh: () async {
+                                  _inventoryBloc.add(RefreshInventory());
+                                },
+                                child: CustomScrollView(
+                                  controller: _scrollController,
+                                  slivers: [
+                                    if (state.stats != null)
+                                      SliverToBoxAdapter(
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 24,
+                                            vertical: 8,
+                                          ),
+                                          child: CompactInventoryStats(
+                                            stats: state.stats!,
+                                          ),
+                                        ),
+                                      ),
+
+                                    SliverToBoxAdapter(
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 4,
+                                        ),
+                                        child: PaginationInfo(
+                                          currentPage: state.currentPage,
+                                          totalPages: state.totalPages,
+                                          totalProducts: state.totalProducts,
+                                          currentProductsCount:
+                                              state.products.length,
+                                          hasReachedMax: state.hasReachedMax,
+                                          isLoadingMore: state.isLoadingMore,
+                                        ),
+                                      ),
+                                    ),
+
+                                    const SliverToBoxAdapter(
+                                      child: SizedBox(height: 16),
+                                    ),
+
+                                    SliverList(
+                                      delegate: SliverChildBuilderDelegate((
+                                        context,
+                                        index,
+                                      ) {
+                                        final product = state.products[index];
+                                        return Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 4,
+                                          ),
+                                          child: InventoryCard(
+                                            product: product,
+                                            onTap: () {
+                                              context.push(
+                                                '/main/update-stock/${product.id}',
+                                              );
+                                            },
+                                          ),
+                                        );
+                                      }, childCount: state.products.length),
+                                    ),
+
+                                    SliverToBoxAdapter(
+                                      child: Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                          24,
+                                          24,
+                                          24,
+                                          32,
+                                        ),
+                                        child: Column(
+                                          children: [
+                                            PaginationControls(
+                                              currentPage: state.currentPage,
+                                              totalPages: state.totalPages,
+                                              isLoading: state.isLoadingMore,
+                                              onPageChanged: _onPageChanged,
+                                            ),
+                                            const SizedBox(height: 16),
+                                            Text(
+                                              'Página ${state.currentPage} de ${state.totalPages}',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: AppColors.gray600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+
+                            if (state is InventoryLoaded) {
+                              if (state.products.isEmpty) {
+                                return _buildEmptyState();
+                              }
+
+                              return RefreshIndicator(
+                                onRefresh: () async {
+                                  _inventoryBloc.add(RefreshInventory());
+                                },
+                                child: CustomScrollView(
+                                  controller: _scrollController,
+                                  slivers: [
+                                    SliverToBoxAdapter(
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 24,
+                                          vertical: 8,
+                                        ),
+                                        child: Text(
+                                          '${state.products.length} productos encontrados',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: AppColors.gray600,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+
+                                    const SliverToBoxAdapter(
+                                      child: SizedBox(height: 16),
+                                    ),
+
+                                    SliverList(
+                                      delegate: SliverChildBuilderDelegate((
+                                        context,
+                                        index,
+                                      ) {
+                                        final product = state.products[index];
+                                        return Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 4,
+                                          ),
+                                          child: InventoryCard(
+                                            product: product,
+                                            onTap: () {
+                                              context.push(
+                                                '/main/update-stock/${product.id}',
+                                              );
+                                            },
+                                          ),
+                                        );
+                                      }, childCount: state.products.length),
+                                    ),
+
+                                    const SliverToBoxAdapter(
+                                      child: SizedBox(height: 80),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+
+                            if (state is InventoryError) {
+                              return _buildErrorState(state);
+                            }
+
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildMainStatCard(
-    String value,
-    String title,
-    String subtitle,
-    Color bgColor,
-    Color textColor,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x1A000000),
-            blurRadius: 4,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: textColor,
+  Widget _buildEmptyState() {
+    return RefreshIndicator(
+      onRefresh: () async {
+        _inventoryBloc.add(RefreshInventory());
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height * 0.6,
+          child: const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.inventory_2_outlined,
+                  size: 64,
+                  color: AppColors.gray400,
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'No se encontraron productos',
+                  style: TextStyle(fontSize: 16, color: AppColors.gray600),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: textColor,
-            ),
-          ),
-          Text(subtitle, style: TextStyle(fontSize: 14)),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildStatusCard(
-    String value,
-    String title,
-    IconData icon,
-    Color bgColor,
-    Color iconColor,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0D000000),
-            blurRadius: 3,
-            offset: Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: iconColor, shape: BoxShape.circle),
-            child: Icon(icon, color: Colors.white, size: 20),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: iconColor,
+  Widget _buildErrorState(InventoryError state) {
+    return RefreshIndicator(
+      onRefresh: () async {
+        _inventoryBloc.add(RefreshInventory());
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.6,
+          padding: const EdgeInsets.all(24),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 64, color: AppColors.red500),
+                const SizedBox(height: 16),
+                Text(
+                  'Error cargando inventario',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: AppColors.red600,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  state.message,
+                  style: TextStyle(fontSize: 14, color: AppColors.gray600),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    _inventoryBloc.add(RefreshInventory());
+                  },
+                  child: const Text('Reintentar'),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: iconColor,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProductCard(Product product) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.gray200, width: 1),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0D000000),
-            blurRadius: 6,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: AppColors.blue50,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.checkroom,
-                  color: AppColors.blue500,
-                  size: 30,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      product.name,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.gray900,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'SKU: ${product.id}',
-                      style: TextStyle(fontSize: 14, color: AppColors.gray600),
-                    ),
-                    Text(
-                      product.category,
-                      style: TextStyle(fontSize: 14, color: AppColors.gray600),
-                    ),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '\$${product.price}',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.gray900,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.green100,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'En stock',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.green600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Stock Total: ${product.stock} unidades',
-                style: TextStyle(fontSize: 14, color: AppColors.gray600),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  context.push('/main/update-stock/${product.id}');
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.blue600,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 10,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 1,
-                ),
-                child: const Text(
-                  'Actualizar Stock',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                ),
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }
 }
-
-class Product {
-  final String id;
-  final String name;
-  final String category;
-  final double price;
-  final int stock;
-  final ProductStatus status;
-  final String image;
-
-  Product({
-    required this.id,
-    required this.name,
-    required this.category,
-    required this.price,
-    required this.stock,
-    required this.status,
-    required this.image,
-  });
-}
-
-enum ProductStatus { inStock, lowStock, outOfStock }
