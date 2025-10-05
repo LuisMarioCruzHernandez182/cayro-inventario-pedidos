@@ -93,6 +93,15 @@ class LoadMoreInventory extends InventoryEvent {
   List<Object?> get props => [];
 }
 
+class LoadProductDetailWithVariants extends InventoryEvent {
+  final int productId;
+
+  const LoadProductDetailWithVariants({required this.productId});
+
+  @override
+  List<Object> get props => [productId];
+}
+
 class SearchInventoryWithButton extends InventoryEvent {
   final String query;
 

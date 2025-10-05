@@ -22,8 +22,9 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => sl<InventoryBloc>()
-        ..add(LoadProductById(productId: int.parse(widget.productId)))
-        ..add(LoadProductVariants(productId: int.parse(widget.productId))),
+        ..add(
+          LoadProductDetailWithVariants(productId: int.parse(widget.productId)),
+        ),
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         body: Container(
@@ -37,6 +38,7 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
           child: SafeArea(
             child: Column(
               children: [
+                // 🔹 Encabezado
                 Expanded(
                   flex: 1,
                   child: Padding(
@@ -88,6 +90,7 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
                   ),
                 ),
 
+                // 🔹 Contenido
                 Expanded(
                   flex: 6,
                   child: Container(
@@ -110,8 +113,9 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
                                 backgroundColor: AppColors.green600,
                               ),
                             );
+                            // 🔁 Recargar variantes actualizadas
                             context.read<InventoryBloc>().add(
-                              LoadProductVariants(
+                              LoadProductDetailWithVariants(
                                 productId: int.parse(widget.productId),
                               ),
                             );
@@ -132,17 +136,11 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
                               );
                             }
 
-                            if (state is ProductDetailLoaded) {
+                            // ✅ Nuevo estado combinado
+                            if (state is ProductDetailWithVariantsLoaded) {
                               return _buildProductContent(
                                 context,
                                 state.product,
-                                [],
-                              );
-                            }
-
-                            if (state is ProductVariantsLoaded) {
-                              return _buildVariantsContent(
-                                context,
                                 state.variants,
                               );
                             }
@@ -169,7 +167,7 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
                                     const SizedBox(height: 8),
                                     Text(
                                       state.message,
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         fontSize: 14,
                                         color: AppColors.gray600,
                                       ),
@@ -179,7 +177,7 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
                                     ElevatedButton(
                                       onPressed: () {
                                         context.read<InventoryBloc>().add(
-                                          LoadProductById(
+                                          LoadProductDetailWithVariants(
                                             productId: int.parse(
                                               widget.productId,
                                             ),
@@ -210,12 +208,14 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
     );
   }
 
-  Widget _buildProductContent(BuildContext context, product, variants) {
+  // 🔹 Sección del contenido del producto y variantes
+  Widget _buildProductContent(BuildContext context, product, List variants) {
     return SingleChildScrollView(
       physics: const ClampingScrollPhysics(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 🔹 Encabezado del producto
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -239,7 +239,9 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
               ),
             ],
           ),
+
           const SizedBox(height: 8),
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -253,6 +255,7 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
               ),
             ],
           ),
+
           const SizedBox(height: 4),
           Text(
             product.description,
@@ -261,6 +264,7 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
 
           const SizedBox(height: 24),
 
+          // 🔹 Estadísticas del producto
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -313,43 +317,13 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
               color: AppColors.gray900,
             ),
           ),
-
           const SizedBox(height: 16),
 
-          BlocBuilder<InventoryBloc, InventoryState>(
-            builder: (context, state) {
-              if (state is ProductVariantsLoaded) {
-                return Column(
-                  children: state.variants
-                      .map((variant) => _buildVariantCard(context, variant))
-                      .toList(),
-                );
-              }
-              return const Center(child: CircularProgressIndicator());
-            },
+          Column(
+            children: (variants)
+                .map<Widget>((variant) => _buildVariantCard(context, variant))
+                .toList(),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildVariantsContent(BuildContext context, variants) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Variantes del Producto',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.gray900,
-            ),
-          ),
-          const SizedBox(height: 16),
-          ...variants
-              .map((variant) => _buildVariantCard(context, variant))
-              .toList(),
         ],
       ),
     );
@@ -381,6 +355,12 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
   }
 
   Widget _buildVariantCard(BuildContext context, variant) {
+    // ✅ Detectar si la variante tiene imágenes
+    final String? imageUrl =
+        (variant.images != null && variant.images.isNotEmpty)
+        ? variant.images.first.url
+        : null;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -399,22 +379,41 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
         children: [
           Row(
             children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: AppColors.blue100,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.checkroom,
-                    color: AppColors.blue600,
-                    size: 24,
-                  ),
-                ),
+              // 🔹 Imagen de la variante (o ícono si no hay imagen)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: imageUrl != null
+                    ? Image.network(
+                        imageUrl,
+                        width: 60,
+                        height: 60,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: 60,
+                            height: 60,
+                            color: AppColors.gray100,
+                            child: const Icon(
+                              Icons.broken_image,
+                              color: AppColors.gray400,
+                            ),
+                          );
+                        },
+                      )
+                    : Container(
+                        width: 60,
+                        height: 60,
+                        color: AppColors.blue100,
+                        child: const Icon(
+                          Icons.checkroom,
+                          color: AppColors.blue600,
+                          size: 28,
+                        ),
+                      ),
               ),
               const SizedBox(width: 12),
+
+              // 🔹 Indicador de color de la variante
               Container(
                 width: 20,
                 height: 20,
@@ -427,6 +426,8 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
                 ),
               ),
               const SizedBox(width: 12),
+
+              // 🔹 Descripción breve
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -439,6 +440,7 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
                         color: AppColors.gray900,
                       ),
                     ),
+                    const SizedBox(height: 2),
                     const Text(
                       'Código:',
                       style: TextStyle(fontSize: 12, color: AppColors.gray600),
@@ -453,6 +455,9 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
                   ],
                 ),
               ),
+
+              // 🔹 Precio y estado del stock
+              // 🔹 Precio y estado del stock
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -464,27 +469,47 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
                       color: AppColors.gray900,
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: variant.stock > 0
-                          ? AppColors.green100
-                          : AppColors.red100,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      variant.stock > 0 ? 'En stock' : 'Sin stock',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: variant.stock > 0
-                            ? AppColors.green600
-                            : AppColors.red600,
-                      ),
-                    ),
+
+                  // 🔹 Etiqueta de estado de stock
+                  Builder(
+                    builder: (context) {
+                      String stockLabel = '';
+                      Color bgColor = AppColors.gray200;
+                      Color textColor = AppColors.gray700;
+
+                      if (variant.stock > 5) {
+                        stockLabel = 'En stock';
+                        bgColor = AppColors.green100;
+                        textColor = AppColors.green600;
+                      } else if (variant.stock > 0 && variant.stock <= 5) {
+                        stockLabel = 'Poco stock';
+                        bgColor = Colors.orange.shade100;
+                        textColor = Colors.orange.shade700;
+                      } else {
+                        stockLabel = 'Sin stock';
+                        bgColor = AppColors.red100;
+                        textColor = AppColors.red600;
+                      }
+
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: bgColor,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          stockLabel,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: textColor,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -493,6 +518,7 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
 
           const SizedBox(height: 16),
 
+          // 🔹 Stock, reservado y disponible
           Row(
             children: [
               Expanded(
@@ -554,6 +580,7 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
 
           const SizedBox(height: 16),
 
+          // 🔹 Botón de actualizar stock
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [

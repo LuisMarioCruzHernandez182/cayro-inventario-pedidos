@@ -36,6 +36,36 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     on<SearchInventoryWithButton>(_onSearchInventoryWithButton);
     on<NavigateToPage>(_onNavigateToPage);
     on<ClearSearch>(_onClearSearch);
+    on<LoadProductDetailWithVariants>(_onLoadProductDetailWithVariants);
+  }
+  Future<void> _onLoadProductDetailWithVariants(
+    LoadProductDetailWithVariants event,
+    Emitter<InventoryState> emit,
+  ) async {
+    emit(InventoryLoading());
+    try {
+      final productResult = await getProductByIdUseCase(event.productId);
+      final variantsResult = await getProductVariantsUseCase(event.productId);
+
+      productResult.fold(
+        (failure) => emit(InventoryError(message: failure.message)),
+        (product) {
+          variantsResult.fold(
+            (failure) => emit(InventoryError(message: failure.message)),
+            (variants) {
+              emit(
+                ProductDetailWithVariantsLoaded(
+                  product: product,
+                  variants: variants,
+                ),
+              );
+            },
+          );
+        },
+      );
+    } catch (e) {
+      emit(InventoryError(message: 'Error cargando producto y variantes: $e'));
+    }
   }
 
   Future<void> _onLoadInventory(

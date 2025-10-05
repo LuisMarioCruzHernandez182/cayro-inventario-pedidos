@@ -87,6 +87,19 @@ class VariantStockUpdated extends InventoryState {
   List<Object> get props => [variant, message];
 }
 
+class ProductDetailWithVariantsLoaded extends InventoryState {
+  final ProductEntity product;
+  final List<ProductVariantEntity> variants;
+
+  const ProductDetailWithVariantsLoaded({
+    required this.product,
+    required this.variants,
+  });
+
+  @override
+  List<Object> get props => [product, variants];
+}
+
 class LowStockProductsLoaded extends InventoryState {
   final List<ProductVariantEntity> lowStockVariants;
 

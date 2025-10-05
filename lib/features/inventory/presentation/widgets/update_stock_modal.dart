@@ -21,13 +21,11 @@ class UpdateStockModal extends StatefulWidget {
 class _UpdateStockModalState extends State<UpdateStockModal> {
   final _formKey = GlobalKey<FormState>();
   final _quantityController = TextEditingController();
-  final _reasonController = TextEditingController();
   String _adjustmentType = 'ADD';
 
   @override
   void dispose() {
     _quantityController.dispose();
-    _reasonController.dispose();
     super.dispose();
   }
 
@@ -35,11 +33,8 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
     if (!_formKey.currentState!.validate()) return;
 
     final quantity = int.parse(_quantityController.text);
-    final reason = _reasonController.text.trim().isEmpty
-        ? null
-        : _reasonController.text.trim();
 
-    widget.onUpdate(_adjustmentType, quantity, reason);
+    widget.onUpdate(_adjustmentType, quantity, null);
     Navigator.of(context).pop();
   }
 
@@ -56,6 +51,7 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 🔹 Título y botón cerrar
               Row(
                 children: [
                   Expanded(
@@ -76,6 +72,7 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
               ),
               const SizedBox(height: 16),
 
+              // 🔹 Información de la variante
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -86,7 +83,7 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Producto: ${widget.variant.color.name} - ${widget.variant.size.name}',
+                      'Variante: ${widget.variant.color.name} - ${widget.variant.size.name}',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -107,13 +104,14 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
               ),
               const SizedBox(height: 20),
 
+              // 🔹 Formulario
               Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Tipo de Ajuste',
+                      'Tipo de ajuste',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -122,6 +120,7 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                     ),
                     const SizedBox(height: 8),
 
+                    // 🔹 Botones agregar / reducir
                     SegmentedButton<String>(
                       segments: const [
                         ButtonSegment<String>(
@@ -143,29 +142,24 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                       },
                       style: ButtonStyle(
                         backgroundColor:
-                            WidgetStateProperty.resolveWith<Color?>((
-                              Set<WidgetState> states,
-                            ) {
+                            WidgetStateProperty.resolveWith<Color?>((states) {
                               if (states.contains(WidgetState.selected)) {
-                                return _adjustmentType == 'ADD'
-                                    ? AppColors.green500
-                                    : AppColors.red500;
+                                return AppColors.blue600;
                               }
-                              return null;
+                              return AppColors.gray100;
                             }),
                         foregroundColor:
-                            WidgetStateProperty.resolveWith<Color?>((
-                              Set<WidgetState> states,
-                            ) {
+                            WidgetStateProperty.resolveWith<Color?>((states) {
                               if (states.contains(WidgetState.selected)) {
                                 return Colors.white;
                               }
-                              return null;
+                              return AppColors.gray700;
                             }),
                       ),
                     ),
                     const SizedBox(height: 16),
 
+                    // 🔹 Campo de cantidad
                     Text(
                       'Cantidad',
                       style: TextStyle(
@@ -186,9 +180,7 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                         ),
                         prefixIcon: Icon(
                           _adjustmentType == 'ADD' ? Icons.add : Icons.remove,
-                          color: _adjustmentType == 'ADD'
-                              ? AppColors.green500
-                              : AppColors.red500,
+                          color: AppColors.blue600,
                         ),
                       ),
                       validator: (value) {
@@ -197,7 +189,7 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                         }
                         final quantity = int.tryParse(value);
                         if (quantity == null || quantity <= 0) {
-                          return 'Por favor ingrese una cantidad válida';
+                          return 'Ingrese una cantidad válida';
                         }
                         if (_adjustmentType == 'SUBTRACT' &&
                             quantity > widget.variant.stock) {
@@ -206,37 +198,15 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 16),
-
-                    Text(
-                      'Motivo (Opcional)',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.gray900,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _reasonController,
-                      maxLines: 3,
-                      decoration: InputDecoration(
-                        hintText: 'Ingrese el motivo del ajuste...',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
                     const SizedBox(height: 24),
 
+                    // 🔹 Botón confirmar
                     PrimaryButton(
                       text: _adjustmentType == 'ADD'
                           ? 'Agregar Stock'
                           : 'Reducir Stock',
                       onPressed: _handleUpdate,
-                      backgroundColor: _adjustmentType == 'ADD'
-                          ? AppColors.green500
-                          : AppColors.red500,
+                      backgroundColor: AppColors.blue600,
                     ),
                   ],
                 ),
