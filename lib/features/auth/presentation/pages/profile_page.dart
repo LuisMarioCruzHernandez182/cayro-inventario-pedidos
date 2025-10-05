@@ -59,6 +59,9 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildLoadingState() {
+    final screenSize = MediaQuery.of(context).size;
+    final isSmallScreen = screenSize.width < 360;
+
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -67,21 +70,162 @@ class _ProfilePageState extends State<ProfilePage> {
           colors: [AppColors.blue600, AppColors.blue500, AppColors.blue400],
         ),
       ),
-      child: const SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(color: Colors.white),
-              SizedBox(height: 16),
-              Text(
-                'Cargando perfil...',
-                style: TextStyle(color: Colors.white, fontSize: 16),
+      child: SafeArea(
+        child: Column(
+          children: [
+            // Header section (mismo diseño que InventoryPage)
+            Expanded(
+              flex: 1,
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: screenSize.width * 0.06,
+                ),
+                child: Row(
+                  children: [
+                    // Logo placeholder (mismo estilo que InventoryPage)
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: screenSize.width * 0.4,
+                            height: screenSize.height * 0.06,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          SizedBox(height: screenSize.height * 0.01),
+                          Container(
+                            width: screenSize.width * 0.6,
+                            height: screenSize.height * 0.02,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
+            ),
+
+            // Content section (mismo diseño que InventoryPage)
+            Expanded(
+              flex: 6,
+              child: Container(
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(32),
+                    topRight: Radius.circular(32),
+                  ),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    screenSize.width * 0.06,
+                    screenSize.height * 0.03,
+                    screenSize.width * 0.06,
+                    screenSize.height * 0.02,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Loading indicator centrado (mismo estilo que InventoryPage)
+                      CircularProgressIndicator(
+                        color: AppColors.blue500,
+                        strokeWidth: 3,
+                      ),
+                      SizedBox(height: screenSize.height * 0.02),
+                      Text(
+                        'Cargando perfil...',
+                        style: TextStyle(
+                          fontSize: isSmallScreen
+                              ? screenSize.width * 0.04
+                              : screenSize.width * 0.045,
+                          color: AppColors.gray600,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+
+                      // Simulación de contenido de perfil (placeholder)
+                      SizedBox(height: screenSize.height * 0.04),
+                      _buildLoadingPlaceholder(screenSize),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _buildLoadingPlaceholder(Size screenSize) {
+    return Column(
+      children: [
+        // Avatar placeholder
+        Container(
+          width: screenSize.width * 0.25,
+          height: screenSize.width * 0.25,
+          decoration: BoxDecoration(
+            color: AppColors.gray200,
+            shape: BoxShape.circle,
+          ),
+        ),
+        SizedBox(height: screenSize.height * 0.02),
+
+        // Name placeholder
+        Container(
+          width: screenSize.width * 0.5,
+          height: screenSize.height * 0.02,
+          decoration: BoxDecoration(
+            color: AppColors.gray200,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        SizedBox(height: screenSize.height * 0.01),
+
+        // Email placeholder
+        Container(
+          width: screenSize.width * 0.7,
+          height: screenSize.height * 0.015,
+          decoration: BoxDecoration(
+            color: AppColors.gray200,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        SizedBox(height: screenSize.height * 0.03),
+
+        // Stats placeholders
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                height: screenSize.height * 0.1,
+                decoration: BoxDecoration(
+                  color: AppColors.gray100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            SizedBox(width: screenSize.width * 0.04),
+            Expanded(
+              child: Container(
+                height: screenSize.height * 0.1,
+                decoration: BoxDecoration(
+                  color: AppColors.gray100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -208,6 +352,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildProfileContent(BuildContext context, AuthAuthenticated state) {
     final user = state.user;
+    final screenSize = MediaQuery.of(context).size;
 
     return Container(
       decoration: const BoxDecoration(
@@ -223,19 +368,21 @@ class _ProfilePageState extends State<ProfilePage> {
             Expanded(
               flex: 3,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                padding: EdgeInsets.symmetric(
+                  horizontal: screenSize.width * 0.06,
+                ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const SizedBox(height: 20),
                     CircleAvatar(
-                      radius: 50,
+                      radius: screenSize.width * 0.12,
                       backgroundColor: Colors.white,
                       child: Text(
                         _getInitials(user.name),
                         style: TextStyle(
                           color: AppColors.blue500,
-                          fontSize: 32,
+                          fontSize: screenSize.width * 0.08,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -243,8 +390,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     const SizedBox(height: 16),
                     Text(
                       user.name,
-                      style: const TextStyle(
-                        fontSize: 28,
+                      style: TextStyle(
+                        fontSize: screenSize.width * 0.065,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
@@ -253,8 +400,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     const SizedBox(height: 4),
                     Text(
                       user.email,
-                      style: const TextStyle(
-                        fontSize: 16,
+                      style: TextStyle(
+                        fontSize: screenSize.width * 0.04,
                         color: Colors.white70,
                         fontWeight: FontWeight.w300,
                       ),
@@ -262,19 +409,19 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 6,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: screenSize.width * 0.04,
+                        vertical: screenSize.height * 0.006,
                       ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Administrador de Inventario',
                         style: TextStyle(
                           color: Colors.blueGrey,
-                          fontSize: 14,
+                          fontSize: screenSize.width * 0.035,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -295,33 +442,43 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+                  padding: EdgeInsets.fromLTRB(
+                    screenSize.width * 0.06,
+                    screenSize.height * 0.02,
+                    screenSize.width * 0.06,
+                    screenSize.height * 0.02,
+                  ),
                   child: SingleChildScrollView(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildSectionTitle('Información de la Empresa'),
+                        _buildSectionTitle(
+                          'Información de la Empresa',
+                          screenSize,
+                        ),
                         const SizedBox(height: 12),
                         _buildInfoCard(
                           imagePath: 'assets/images/logo.png',
                           title: 'Cayro Uniformes',
                           subtitle: 'Sucursal Centro • ID: CAY-001',
                           color: AppColors.blue500,
+                          screenSize: screenSize,
                         ),
                         const SizedBox(height: 20),
 
-                        _buildSectionTitle('Estadísticas'),
+                        _buildSectionTitle('Estadísticas', screenSize),
                         const SizedBox(height: 12),
                         _buildStatsSection(),
                         const SizedBox(height: 20),
 
-                        _buildSectionTitle('Acciones Rápidas'),
+                        _buildSectionTitle('Acciones Rápidas', screenSize),
                         const SizedBox(height: 12),
                         _buildQuickAction(
                           icon: Icons.inventory_2,
                           title: 'Gestionar Inventario',
                           color: AppColors.blue500,
                           onTap: () => widget.onNavigateToTab?.call(0),
+                          screenSize: screenSize,
                         ),
                         const SizedBox(height: 8),
                         _buildQuickAction(
@@ -329,6 +486,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           title: 'Ver Pedidos',
                           color: AppColors.green600,
                           onTap: () => widget.onNavigateToTab?.call(1),
+                          screenSize: screenSize,
                         ),
                         const SizedBox(height: 24),
 
@@ -339,15 +497,17 @@ class _ProfilePageState extends State<ProfilePage> {
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AppColors.red600,
                               side: BorderSide(color: AppColors.red600),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              padding: EdgeInsets.symmetric(
+                                vertical: screenSize.height * 0.016,
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            child: const Text(
+                            child: Text(
                               'Cerrar Sesión',
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: screenSize.width * 0.04,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -365,11 +525,11 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(String title, Size screenSize) {
     return Text(
       title,
       style: TextStyle(
-        fontSize: 20,
+        fontSize: screenSize.width * 0.05,
         fontWeight: FontWeight.bold,
         color: AppColors.gray900,
       ),
@@ -382,9 +542,10 @@ class _ProfilePageState extends State<ProfilePage> {
     required String title,
     required String subtitle,
     required Color color,
+    required Size screenSize,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(screenSize.width * 0.04),
       decoration: BoxDecoration(
         color: AppColors.gray50,
         borderRadius: BorderRadius.circular(12),
@@ -392,8 +553,8 @@ class _ProfilePageState extends State<ProfilePage> {
       child: Row(
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: screenSize.width * 0.12,
+            height: screenSize.width * 0.12,
             decoration: BoxDecoration(
               color: imagePath != null ? Colors.white : Colors.white30,
               borderRadius: BorderRadius.circular(12),
@@ -403,14 +564,14 @@ class _ProfilePageState extends State<ProfilePage> {
                     borderRadius: BorderRadius.circular(12),
                     child: Image.asset(
                       imagePath,
-                      width: 48,
-                      height: 48,
+                      width: screenSize.width * 0.12,
+                      height: screenSize.width * 0.12,
                       fit: BoxFit.contain,
                     ),
                   )
-                : Icon(icon, color: color, size: 24),
+                : Icon(icon, color: color, size: screenSize.width * 0.06),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: screenSize.width * 0.04),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -418,7 +579,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: screenSize.width * 0.042,
                     fontWeight: FontWeight.bold,
                     color: AppColors.gray900,
                   ),
@@ -426,7 +587,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: TextStyle(fontSize: 14, color: AppColors.gray600),
+                  style: TextStyle(
+                    fontSize: screenSize.width * 0.035,
+                    color: AppColors.gray600,
+                  ),
                 ),
               ],
             ),
@@ -441,12 +605,13 @@ class _ProfilePageState extends State<ProfilePage> {
     required String title,
     required Color color,
     required VoidCallback onTap,
+    required Size screenSize,
   }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(screenSize.width * 0.04),
         decoration: BoxDecoration(
           color: AppColors.gray50,
           borderRadius: BorderRadius.circular(12),
@@ -454,23 +619,27 @@ class _ProfilePageState extends State<ProfilePage> {
         child: Row(
           children: [
             Container(
-              width: 40,
-              height: 40,
+              width: screenSize.width * 0.1,
+              height: screenSize.width * 0.1,
               decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
-              child: Icon(icon, color: color, size: 20),
+              child: Icon(icon, color: color, size: screenSize.width * 0.05),
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: screenSize.width * 0.04),
             Expanded(
               child: Text(
                 title,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: screenSize.width * 0.04,
                   fontWeight: FontWeight.w600,
                   color: AppColors.gray900,
                 ),
               ),
             ),
-            Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.gray500),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: screenSize.width * 0.04,
+              color: AppColors.gray500,
+            ),
           ],
         ),
       ),
