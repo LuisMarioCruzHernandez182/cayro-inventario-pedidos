@@ -3,45 +3,53 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../bloc/auth_bloc.dart';
 import '../../../../app/di/injection_container.dart' as di;
-import 'profile_page.dart';
-import '../../../inventory/presentation/pages/inventory_page.dart';
-import '../../../orders/presentation/pages/orders_page.dart';
 import '../../../../core/constants/app_colors.dart';
 
 class MainShell extends StatefulWidget {
-  const MainShell({super.key});
+  final Widget? child;
+
+  const MainShell({super.key, this.child});
 
   @override
   State<MainShell> createState() => _MainShellState();
 }
 
 class _MainShellState extends State<MainShell> {
-  int _currentIndex = 2;
-
-  void _changeTab(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
+  int _getCurrentIndex(BuildContext context) {
+    final location = GoRouterState.of(context).uri.toString();
+    if (location.contains('/main/inventory') || location == '/main') return 0;
+    if (location.contains('/main/orders')) return 1;
+    if (location.contains('/main/profile')) return 2;
+    return 0;
   }
 
-  List<Widget> get _pages => [
-    const InventoryPage(),
-    const OrdersPage(),
-    ProfilePage(onNavigateToTab: _changeTab),
-  ];
+  void _navigateToTab(int index) {
+    switch (index) {
+      case 0:
+        context.go('/main/inventory');
+        break;
+      case 1:
+        context.go('/main/orders');
+        break;
+      case 2:
+        context.go('/main/profile');
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final currentIndex = _getCurrentIndex(context);
+
     return BlocProvider(
       create: (context) {
         final bloc = di.sl<AuthBloc>();
-        Future.microtask(() => bloc.add(CheckAuthStatus()));
         return bloc;
       },
       child: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthUnauthenticated) {
-            context.pushReplacement('/');
+            context.go('/');
           } else if (state is AuthError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -60,14 +68,11 @@ class _MainShellState extends State<MainShell> {
         },
         child: Scaffold(
           backgroundColor: AppColors.gray50,
-          body: IndexedStack(index: _currentIndex, children: _pages),
+          resizeToAvoidBottomInset: false,
+          body: widget.child ?? const SizedBox(),
           bottomNavigationBar: BottomNavigationBar(
-            currentIndex: _currentIndex,
-            onTap: (index) {
-              setState(() {
-                _currentIndex = index;
-              });
-            },
+            currentIndex: currentIndex,
+            onTap: _navigateToTab,
             type: BottomNavigationBarType.fixed,
             backgroundColor: AppColors.white,
             selectedItemColor: AppColors.blue500,

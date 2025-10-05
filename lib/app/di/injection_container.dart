@@ -20,6 +20,16 @@ import '../../features/stats/domain/repositories/stats_repository.dart';
 import '../../features/stats/domain/usecases/get_current_month_stats_usecase.dart';
 import '../../features/stats/presentation/bloc/stats_bloc.dart';
 
+import '../../features/inventory/data/datasources/inventory_remote_datasource.dart';
+import '../../features/inventory/data/repositories/inventory_repository_impl.dart';
+import '../../features/inventory/domain/repositories/inventory_repository.dart';
+import '../../features/inventory/domain/usecases/get_inventory_usecase.dart';
+import '../../features/inventory/domain/usecases/get_inventory_stats_usecase.dart';
+import '../../features/inventory/domain/usecases/get_product_by_id_usecase.dart';
+import '../../features/inventory/domain/usecases/get_product_variants_usecase.dart';
+import '../../features/inventory/domain/usecases/update_variant_stock_usecase.dart';
+import '../../features/inventory/presentation/bloc/inventory_bloc.dart';
+
 final sl = GetIt.instance;
 
 Future<void> init() async {
@@ -88,6 +98,45 @@ Future<void> init() async {
   sl.registerFactory<StatsBloc>(
     () => StatsBloc(
       getCurrentMonthStatsUseCase: sl<GetCurrentMonthStatsUseCase>(),
+    ),
+  );
+
+  sl.registerLazySingleton<InventoryRemoteDataSource>(
+    () => InventoryRemoteDataSourceImpl(
+      client: sl<HttpClient>(),
+      baseUrl: AppConstants.fullApiUrl,
+    ),
+  );
+
+  sl.registerLazySingleton<InventoryRepository>(
+    () => InventoryRepositoryImpl(
+      remoteDataSource: sl<InventoryRemoteDataSource>(),
+    ),
+  );
+
+  sl.registerLazySingleton<GetInventoryUseCase>(
+    () => GetInventoryUseCase(sl<InventoryRepository>()),
+  );
+  sl.registerLazySingleton<GetInventoryStatsUseCase>(
+    () => GetInventoryStatsUseCase(sl<InventoryRepository>()),
+  );
+  sl.registerLazySingleton<GetProductByIdUseCase>(
+    () => GetProductByIdUseCase(sl<InventoryRepository>()),
+  );
+  sl.registerLazySingleton<GetProductVariantsUseCase>(
+    () => GetProductVariantsUseCase(sl<InventoryRepository>()),
+  );
+  sl.registerLazySingleton<UpdateVariantStockUseCase>(
+    () => UpdateVariantStockUseCase(sl<InventoryRepository>()),
+  );
+
+  sl.registerFactory<InventoryBloc>(
+    () => InventoryBloc(
+      getInventoryUseCase: sl<GetInventoryUseCase>(),
+      getInventoryStatsUseCase: sl<GetInventoryStatsUseCase>(),
+      getProductByIdUseCase: sl<GetProductByIdUseCase>(),
+      getProductVariantsUseCase: sl<GetProductVariantsUseCase>(),
+      updateVariantStockUseCase: sl<UpdateVariantStockUseCase>(),
     ),
   );
 }
