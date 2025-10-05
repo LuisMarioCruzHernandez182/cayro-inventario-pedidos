@@ -609,25 +609,35 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
   }
 
   void _showStockAdjustmentModal(BuildContext context, variant) {
+    // Guarda el bloc actual antes de abrir el modal
+    final inventoryBloc = context.read<InventoryBloc>();
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => UpdateStockModal(
-        variant: variant,
-        onUpdate: (adjustmentType, quantity, reason) {
-          context.read<InventoryBloc>().add(
-            UpdateVariantStock(
-              variantId: variant.id,
-              adjustmentType: adjustmentType,
-              quantity: quantity,
-              reason: reason,
-            ),
-          );
-        },
-      ),
+      builder: (sheetContext) {
+        // Inyectamos el mismo bloc dentro del bottomsheet
+        return BlocProvider.value(
+          value: inventoryBloc,
+          child: UpdateStockModal(
+            variant: variant,
+            onUpdate: (adjustmentType, quantity, reason) {
+              // 🚀 Llamamos directamente al bloc, sin usar context.read()
+              inventoryBloc.add(
+                UpdateVariantStock(
+                  variantId: variant.id,
+                  adjustmentType: adjustmentType,
+                  quantity: quantity,
+                  reason: reason,
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }
