@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../domain/entities/inventory_stats_entity.dart';
+import '../bloc/inventory_bloc.dart';
+import '../bloc/inventory_event.dart';
 
 class CompactInventoryStats extends StatelessWidget {
   final InventoryStatsEntity stats;
 
   const CompactInventoryStats({super.key, required this.stats});
-
+  
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -39,37 +42,71 @@ class CompactInventoryStats extends StatelessWidget {
         const SizedBox(height: 12),
         Row(
           children: [
+            // 🔹 En stock
             Expanded(
-              child: _buildSmallStatCard(
-                value:
-                    (stats.totalStock -
-                            stats.lowStockCount -
-                            stats.outOfStockCount)
-                        .toString(),
-                title: 'En Stock',
-                color: AppColors.green500,
-                backgroundColor: AppColors.green50,
-                icon: Icons.check_circle,
+              child: GestureDetector(
+                onTap: () {
+                  context.read<InventoryBloc>().add(
+                    LoadInventoryWithStats(
+                      page: 1,
+                      search: null,
+                      stockStatus: 'IN_STOCK',
+                    ),
+                  );
+                },
+                child: _buildSmallStatCard(
+                  value: stats.inStockCount.toString(),
+                  title: 'En Stock',
+                  color: AppColors.green500,
+                  backgroundColor: AppColors.green50,
+                  icon: Icons.check_circle,
+                ),
               ),
             ),
             const SizedBox(width: 8),
+
+            // 🔹 Poco stock
             Expanded(
-              child: _buildSmallStatCard(
-                value: stats.lowStockCount.toString(),
-                title: 'Poco Stock',
-                color: AppColors.orange500,
-                backgroundColor: AppColors.orange50,
-                icon: Icons.warning,
+              child: GestureDetector(
+                onTap: () {
+                  context.read<InventoryBloc>().add(
+                    LoadInventoryWithStats(
+                      page: 1,
+                      search: null,
+                      stockStatus: 'LOW_STOCK',
+                    ),
+                  );
+                },
+                child: _buildSmallStatCard(
+                  value: stats.lowStockCount.toString(),
+                  title: 'Poco Stock',
+                  color: AppColors.orange500,
+                  backgroundColor: AppColors.orange50,
+                  icon: Icons.warning,
+                ),
               ),
             ),
             const SizedBox(width: 8),
+
+            // 🔹 Sin stock
             Expanded(
-              child: _buildSmallStatCard(
-                value: stats.outOfStockCount.toString(),
-                title: 'Agotados',
-                color: AppColors.red500,
-                backgroundColor: AppColors.red50,
-                icon: Icons.cancel,
+              child: GestureDetector(
+                onTap: () {
+                  context.read<InventoryBloc>().add(
+                    LoadInventoryWithStats(
+                      page: 1,
+                      search: null,
+                      stockStatus: 'OUT_OF_STOCK',
+                    ),
+                  );
+                },
+                child: _buildSmallStatCard(
+                  value: stats.outOfStockCount.toString(),
+                  title: 'Agotados',
+                  color: AppColors.red500,
+                  backgroundColor: AppColors.red50,
+                  icon: Icons.cancel,
+                ),
               ),
             ),
           ],

@@ -129,6 +129,9 @@ class InventoryWithStatsLoaded extends InventoryState {
   final int totalPages;
   final int totalProducts;
 
+  /// ✅ Nuevo campo: guarda el filtro actual de stock
+  final String? currentStockStatus;
+
   const InventoryWithStatsLoaded({
     required this.products,
     this.stats,
@@ -139,6 +142,7 @@ class InventoryWithStatsLoaded extends InventoryState {
     this.isLoadingMore = false,
     this.totalPages = 1,
     this.totalProducts = 0,
+    this.currentStockStatus, // 👈 agregado
   });
 
   InventoryWithStatsLoaded copyWith({
@@ -151,6 +155,7 @@ class InventoryWithStatsLoaded extends InventoryState {
     bool? isLoadingMore,
     int? totalPages,
     int? totalProducts,
+    String? currentStockStatus, // 👈 agregado
   }) {
     return InventoryWithStatsLoaded(
       products: products ?? this.products,
@@ -162,6 +167,8 @@ class InventoryWithStatsLoaded extends InventoryState {
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       totalPages: totalPages ?? this.totalPages,
       totalProducts: totalProducts ?? this.totalProducts,
+      currentStockStatus:
+          currentStockStatus ?? this.currentStockStatus, // 👈 agregado
     );
   }
 
@@ -176,5 +183,6 @@ class InventoryWithStatsLoaded extends InventoryState {
     isLoadingMore,
     totalPages,
     totalProducts,
+    currentStockStatus, // 👈 agregado
   ];
 }

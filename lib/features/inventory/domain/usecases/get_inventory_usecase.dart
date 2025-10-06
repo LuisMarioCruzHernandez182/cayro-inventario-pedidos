@@ -12,7 +12,13 @@ class GetInventoryUseCase {
     int page = 1,
     int limit = 10,
     String? search,
+    String? stockStatus,
   }) {
-    return repository.getInventory(page: page, limit: limit, search: search);
+    return repository.getInventory(
+      page: page,
+      limit: limit,
+      search: search,
+      stockStatus: stockStatus,
+    );
   }
 }

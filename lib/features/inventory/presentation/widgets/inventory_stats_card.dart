@@ -52,6 +52,14 @@ class InventoryStatsCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: _buildStatItem(
+                    icon: Icons.check_circle,
+                    title: 'En Stock',
+                    value: stats.inStockCount.toString(),
+                    color: AppColors.green600,
+                  ),
+                ),
+                Expanded(
+                  child: _buildStatItem(
                     icon: Icons.warning_amber,
                     title: 'Poco Stock',
                     value: stats.lowStockCount.toString(),
@@ -61,13 +69,14 @@ class InventoryStatsCard extends StatelessWidget {
                 Expanded(
                   child: _buildStatItem(
                     icon: Icons.error_outline,
-                    title: 'Sin Stock',
+                    title: 'Agotados',
                     value: stats.outOfStockCount.toString(),
                     color: AppColors.red500,
                   ),
                 ),
               ],
             ),
+
             const SizedBox(height: 16),
             Container(
               width: double.infinity,

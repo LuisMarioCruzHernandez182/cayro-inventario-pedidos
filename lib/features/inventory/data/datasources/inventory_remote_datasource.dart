@@ -14,6 +14,7 @@ abstract class InventoryRemoteDataSource {
     int page = 1,
     int limit = 10,
     String? search,
+    String? stockStatus,
   });
 
   Future<InventoryStatsModel> getInventoryStats();
@@ -43,15 +44,17 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
     int page = 1,
     int limit = 10,
     String? search,
+    String? stockStatus,
   }) async {
     try {
       String url = '$baseUrl/inventory?page=$page&limit=$limit';
       if (search != null && search.isNotEmpty) {
-        final encodedSearch = Uri.encodeComponent(search);
-        url += '&search=$encodedSearch';
+        url += '&search=${Uri.encodeComponent(search)}';
       }
 
-      developer.log('[InventoryRemoteDataSource] Getting inventory from: $url');
+      if (stockStatus != null && stockStatus.isNotEmpty) {
+        url += '&stockStatus=$stockStatus';
+      }
       final response = await client.getJson(url);
       developer.log(
         '[InventoryRemoteDataSource] Inventory response: ${jsonEncode(response)}',

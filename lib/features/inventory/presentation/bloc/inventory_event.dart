@@ -11,11 +11,17 @@ class LoadInventory extends InventoryEvent {
   final int page;
   final int limit;
   final String? search;
+  final String? stockStatus;
 
-  const LoadInventory({this.page = 1, this.limit = 10, this.search});
+  const LoadInventory({
+    this.page = 1,
+    this.limit = 10,
+    this.search,
+    this.stockStatus,
+  });
 
   @override
-  List<Object?> get props => [page, limit, search];
+  List<Object?> get props => [page, limit, search, stockStatus];
 }
 
 class LoadInventoryStats extends InventoryEvent {}
@@ -24,27 +30,27 @@ class LoadInventoryWithStats extends InventoryEvent {
   final int page;
   final int limit;
   final String? search;
-
-  const LoadInventoryWithStats({this.page = 1, this.limit = 10, this.search});
-
+final String? stockStatus;
+  const LoadInventoryWithStats({
+    this.page = 1,
+    this.limit = 10,
+    this.search,
+    this.stockStatus,
+  });
   @override
-  List<Object?> get props => [page, limit, search];
+  List<Object?> get props => [page, limit, search, stockStatus];
 }
 
 class LoadProductById extends InventoryEvent {
   final int productId;
-
   const LoadProductById({required this.productId});
-
   @override
   List<Object> get props => [productId];
 }
 
 class LoadProductVariants extends InventoryEvent {
   final int productId;
-
   const LoadProductVariants({required this.productId});
-
   @override
   List<Object> get props => [productId];
 }
@@ -68,9 +74,7 @@ class UpdateVariantStock extends InventoryEvent {
 
 class LoadLowStockProducts extends InventoryEvent {
   final int threshold;
-
   const LoadLowStockProducts({this.threshold = 5});
-
   @override
   List<Object> get props => [threshold];
 }
@@ -79,34 +83,27 @@ class RefreshInventory extends InventoryEvent {}
 
 class SearchInventory extends InventoryEvent {
   final String query;
-
   const SearchInventory({required this.query});
-
   @override
   List<Object> get props => [query];
 }
 
 class LoadMoreInventory extends InventoryEvent {
   const LoadMoreInventory();
-
   @override
   List<Object?> get props => [];
 }
 
 class LoadProductDetailWithVariants extends InventoryEvent {
   final int productId;
-
   const LoadProductDetailWithVariants({required this.productId});
-
   @override
   List<Object> get props => [productId];
 }
 
 class SearchInventoryWithButton extends InventoryEvent {
   final String query;
-
   const SearchInventoryWithButton({required this.query});
-
   @override
   List<Object> get props => [query];
 }
@@ -114,16 +111,14 @@ class SearchInventoryWithButton extends InventoryEvent {
 class NavigateToPage extends InventoryEvent {
   final int page;
   final String? search;
-
-  const NavigateToPage({required this.page, this.search});
-
+  final String? stockStatus; // 🟢 Nuevo parámetro
+  const NavigateToPage({required this.page, this.search, this.stockStatus});
   @override
-  List<Object?> get props => [page, search];
+  List<Object?> get props => [page, search, stockStatus];
 }
 
 class ClearSearch extends InventoryEvent {
   const ClearSearch();
-
   @override
   List<Object?> get props => [];
 }

@@ -30,8 +30,6 @@ class _InventoryPageState extends State<InventoryPage> {
     super.initState();
     _inventoryBloc = sl<InventoryBloc>()
       ..add(const LoadInventoryWithStats(page: 1));
-
-    _inventoryBloc.stream.listen((state) {});
   }
 
   @override
@@ -50,14 +48,22 @@ class _InventoryPageState extends State<InventoryPage> {
   void _onPageChanged(int page) {
     final currentState = _inventoryBloc.state;
     String? currentSearch;
+    String? currentStockStatus;
 
     if (currentState is InventoryWithStatsLoaded) {
       currentSearch = currentState.currentSearch;
+      currentStockStatus = currentState.currentStockStatus;
     }
 
     _scrollToTop();
 
-    _inventoryBloc.add(NavigateToPage(page: page, search: currentSearch));
+    _inventoryBloc.add(
+      NavigateToPage(
+        page: page,
+        search: currentSearch,
+        stockStatus: currentStockStatus,
+      ),
+    );
   }
 
   void _scrollToTop() {
@@ -75,6 +81,11 @@ class _InventoryPageState extends State<InventoryPage> {
     _inventoryBloc.add(const ClearSearch());
   }
 
+  void _onClearFilters() {
+    _searchController.clear();
+    _inventoryBloc.add(const LoadInventoryWithStats(page: 1, search: null));
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AuthBloc, AuthState>(
@@ -86,9 +97,7 @@ class _InventoryPageState extends State<InventoryPage> {
           return const SizedBox.shrink();
         }
 
-        if (state is AuthLoading) {
-          return _buildLoadingState();
-        }
+        if (state is AuthLoading) return _buildLoadingState();
 
         return BlocProvider.value(
           value: _inventoryBloc,
@@ -139,6 +148,7 @@ class _InventoryPageState extends State<InventoryPage> {
         child: SafeArea(
           child: Column(
             children: [
+              // 🔹 Encabezado superior
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24.0,
@@ -160,7 +170,7 @@ class _InventoryPageState extends State<InventoryPage> {
                       'Gestión de productos y stock',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.white,
+                        color: Colors.white.withValues(alpha: 0.9),
                         fontWeight: FontWeight.w300,
                       ),
                       textAlign: TextAlign.center,
@@ -169,6 +179,7 @@ class _InventoryPageState extends State<InventoryPage> {
                 ),
               ),
 
+              // 🔹 Contenido principal
               Expanded(
                 child: Container(
                   width: double.infinity,
@@ -181,6 +192,7 @@ class _InventoryPageState extends State<InventoryPage> {
                   ),
                   child: Column(
                     children: [
+                      // 🔹 Barra de búsqueda
                       Padding(
                         padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
                         child: BlocBuilder<InventoryBloc, InventoryState>(
@@ -200,6 +212,7 @@ class _InventoryPageState extends State<InventoryPage> {
                         ),
                       ),
 
+                      // 🔹 Lista principal
                       Expanded(
                         child: BlocBuilder<InventoryBloc, InventoryState>(
                           builder: (context, state) {
@@ -211,7 +224,7 @@ class _InventoryPageState extends State<InventoryPage> {
 
                             if (state is InventoryWithStatsLoaded) {
                               if (state.products.isEmpty) {
-                                return _buildEmptyState();
+                                return _buildEmptyOrFilteredState(state);
                               }
 
                               return RefreshIndicator(
@@ -221,6 +234,7 @@ class _InventoryPageState extends State<InventoryPage> {
                                 child: CustomScrollView(
                                   controller: _scrollController,
                                   slivers: [
+                                    // 🔹 Estadísticas
                                     if (state.stats != null)
                                       SliverToBoxAdapter(
                                         child: Padding(
@@ -229,11 +243,15 @@ class _InventoryPageState extends State<InventoryPage> {
                                             vertical: 8,
                                           ),
                                           child: CompactInventoryStats(
+                                            key: ValueKey(
+                                              state.stats!.hashCode,
+                                            ),
                                             stats: state.stats!,
                                           ),
                                         ),
                                       ),
 
+                                    // 🔹 Info de paginación
                                     SliverToBoxAdapter(
                                       child: Padding(
                                         padding: const EdgeInsets.symmetric(
@@ -256,6 +274,7 @@ class _InventoryPageState extends State<InventoryPage> {
                                       child: SizedBox(height: 16),
                                     ),
 
+                                    // 🔹 Lista de productos
                                     SliverList(
                                       delegate: SliverChildBuilderDelegate((
                                         context,
@@ -279,6 +298,7 @@ class _InventoryPageState extends State<InventoryPage> {
                                       }, childCount: state.products.length),
                                     ),
 
+                                    // 🔹 Controles de paginación
                                     SliverToBoxAdapter(
                                       child: Padding(
                                         padding: const EdgeInsets.fromLTRB(
@@ -312,70 +332,6 @@ class _InventoryPageState extends State<InventoryPage> {
                               );
                             }
 
-                            if (state is InventoryLoaded) {
-                              if (state.products.isEmpty) {
-                                return _buildEmptyState();
-                              }
-
-                              return RefreshIndicator(
-                                onRefresh: () async {
-                                  _inventoryBloc.add(RefreshInventory());
-                                },
-                                child: CustomScrollView(
-                                  controller: _scrollController,
-                                  slivers: [
-                                    SliverToBoxAdapter(
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 24,
-                                          vertical: 8,
-                                        ),
-                                        child: Text(
-                                          '${state.products.length} productos encontrados',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: AppColors.gray600,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-
-                                    const SliverToBoxAdapter(
-                                      child: SizedBox(height: 16),
-                                    ),
-
-                                    SliverList(
-                                      delegate: SliverChildBuilderDelegate((
-                                        context,
-                                        index,
-                                      ) {
-                                        final product = state.products[index];
-                                        return Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 4,
-                                          ),
-                                          child: InventoryCard(
-                                            product: product,
-                                            onTap: () {
-                                              context.push(
-                                                '/main/update-stock/${product.id}',
-                                              );
-                                            },
-                                          ),
-                                        );
-                                      }, childCount: state.products.length),
-                                    ),
-
-                                    const SliverToBoxAdapter(
-                                      child: SizedBox(height: 80),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
-
                             if (state is InventoryError) {
                               return _buildErrorState(state);
                             }
@@ -397,38 +353,11 @@ class _InventoryPageState extends State<InventoryPage> {
     );
   }
 
-  Widget _buildEmptyState() {
-    return RefreshIndicator(
-      onRefresh: () async {
-        _inventoryBloc.add(RefreshInventory());
-      },
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: SizedBox(
-          height: MediaQuery.of(context).size.height * 0.6,
-          child: const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.inventory_2_outlined,
-                  size: 64,
-                  color: AppColors.gray400,
-                ),
-                SizedBox(height: 16),
-                Text(
-                  'No se encontraron productos',
-                  style: TextStyle(fontSize: 16, color: AppColors.gray600),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  /// 🔹 Estado vacío o sin resultados (mantiene diseño + botón “Limpiar filtros”)
+  Widget _buildEmptyOrFilteredState(InventoryWithStatsLoaded state) {
+    final hasFilters =
+        state.currentSearch != null || state.currentStockStatus != null;
 
-  Widget _buildErrorState(InventoryError state) {
     return RefreshIndicator(
       onRefresh: () async {
         _inventoryBloc.add(RefreshInventory());
@@ -436,38 +365,144 @@ class _InventoryPageState extends State<InventoryPage> {
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         child: Container(
-          height: MediaQuery.of(context).size.height * 0.6,
-          padding: const EdgeInsets.all(24),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error_outline, size: 64, color: AppColors.red500),
-                const SizedBox(height: 16),
-                Text(
-                  'Error cargando inventario',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppColors.red600,
-                    fontWeight: FontWeight.w600,
+          width: double.infinity,
+          height: MediaQuery.of(context).size.height * 0.7,
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // 🔹 Icono circular
+              Container(
+                padding: const EdgeInsets.all(26),
+                decoration: BoxDecoration(
+                  color: AppColors.blue50,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.blue400.withValues(alpha: 0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.inventory_2_outlined,
+                  size: 70,
+                  color: AppColors.blue600,
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // 🔹 Texto principal
+              Text(
+                hasFilters
+                    ? 'No se encontraron productos con los filtros aplicados.'
+                    : 'No se encontraron productos en el inventario.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.gray800,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // 🔹 Subtexto
+              Text(
+                hasFilters
+                    ? 'Puedes limpiar los filtros para volver a ver todos los productos.'
+                    : 'Agrega productos o verifica la conexión al servidor.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: AppColors.gray600,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // 🔹 Botón “Limpiar filtros”
+              if (hasFilters)
+                ElevatedButton.icon(
+                  onPressed: _onClearFilters,
+                  icon: const Icon(
+                    Icons.filter_alt_off_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                  label: const Text(
+                    'Limpiar filtros',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.blue600,
+                    elevation: 8,
+                    shadowColor: AppColors.blue400.withValues(alpha: 0.4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 30,
+                      vertical: 16,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    foregroundColor: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  state.message,
-                  style: TextStyle(fontSize: 14, color: AppColors.gray600),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () {
-                    _inventoryBloc.add(RefreshInventory());
-                  },
-                  child: const Text('Reintentar'),
-                ),
-              ],
-            ),
+            ],
           ),
+        ),
+      ),
+    );
+  }
+
+  /// 🔹 Estado de error
+  Widget _buildErrorState(InventoryError state) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: AppColors.red500),
+            const SizedBox(height: 16),
+            Text(
+              'Error cargando inventario',
+              style: TextStyle(
+                fontSize: 16,
+                color: AppColors.red600,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              state.message,
+              style: TextStyle(fontSize: 14, color: AppColors.gray600),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                _inventoryBloc.add(RefreshInventory());
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.blue600,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 28,
+                  vertical: 14,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Reintentar'),
+            ),
+          ],
         ),
       ),
     );

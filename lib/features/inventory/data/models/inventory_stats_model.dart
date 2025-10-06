@@ -4,20 +4,22 @@ class InventoryStatsModel extends InventoryStatsEntity {
   const InventoryStatsModel({
     required super.totalProducts,
     required super.totalVariants,
-    required super.lowStockCount,
-    required super.outOfStockCount,
     required super.totalStock,
     required super.totalInventoryValue,
+    required super.inStockCount,
+    required super.lowStockCount,
+    required super.outOfStockCount,
   });
 
   factory InventoryStatsModel.fromJson(Map<String, dynamic> json) {
     return InventoryStatsModel(
       totalProducts: json['totalProducts'] ?? 0,
       totalVariants: json['totalVariants'] ?? 0,
-      lowStockCount: json['lowStockCount'] ?? 0,
-      outOfStockCount: json['outOfStockCount'] ?? 0,
       totalStock: json['totalStock'] ?? 0,
       totalInventoryValue: (json['totalInventoryValue'] ?? 0).toDouble(),
+      inStockCount: json['inStockCount'] ?? 0,
+      lowStockCount: json['lowStockCount'] ?? 0,
+      outOfStockCount: json['outOfStockCount'] ?? 0,
     );
   }
 
@@ -25,10 +27,11 @@ class InventoryStatsModel extends InventoryStatsEntity {
     return {
       'totalProducts': totalProducts,
       'totalVariants': totalVariants,
-      'lowStockCount': lowStockCount,
-      'outOfStockCount': outOfStockCount,
       'totalStock': totalStock,
       'totalInventoryValue': totalInventoryValue,
+      'inStockCount': inStockCount,
+      'lowStockCount': lowStockCount,
+      'outOfStockCount': outOfStockCount,
     };
   }
 }
