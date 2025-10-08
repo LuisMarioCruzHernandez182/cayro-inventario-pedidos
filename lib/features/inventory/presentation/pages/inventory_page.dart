@@ -77,6 +77,9 @@ class _InventoryPageState extends State<InventoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final isSmallScreen = screenSize.height < 700;
+
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
         if (state is AuthUnauthenticated) {
@@ -87,18 +90,18 @@ class _InventoryPageState extends State<InventoryPage> {
         }
 
         if (state is AuthLoading) {
-          return _buildLoadingState();
+          return _buildLoadingState(screenSize);
         }
 
         return BlocProvider.value(
           value: _inventoryBloc,
-          child: _buildInventoryContent(context),
+          child: _buildInventoryContent(context, screenSize, isSmallScreen),
         );
       },
     );
   }
 
-  Widget _buildLoadingState() {
+  Widget _buildLoadingState(Size screenSize) {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -107,16 +110,19 @@ class _InventoryPageState extends State<InventoryPage> {
           colors: [AppColors.blue600, AppColors.blue500, AppColors.blue400],
         ),
       ),
-      child: const SafeArea(
+      child: SafeArea(
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               CircularProgressIndicator(color: Colors.white),
-              SizedBox(height: 16),
+              SizedBox(height: screenSize.height * 0.02),
               Text(
                 'Cargando inventario...',
-                style: TextStyle(color: Colors.white, fontSize: 16),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: screenSize.width * 0.04,
+                ),
               ),
             ],
           ),
@@ -125,7 +131,11 @@ class _InventoryPageState extends State<InventoryPage> {
     );
   }
 
-  Widget _buildInventoryContent(BuildContext context) {
+  Widget _buildInventoryContent(
+    BuildContext context,
+    Size screenSize,
+    bool isSmallScreen,
+  ) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Container(
@@ -139,27 +149,31 @@ class _InventoryPageState extends State<InventoryPage> {
         child: SafeArea(
           child: Column(
             children: [
+              // Header section
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24.0,
-                  vertical: 20,
+                padding: EdgeInsets.symmetric(
+                  horizontal: screenSize.width * 0.06,
+                  vertical: screenSize.height * 0.02,
                 ),
                 child: Column(
                   children: [
-                    const Text(
-                      'Inventario',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'Inventario',
+                        style: TextStyle(
+                          fontSize: screenSize.width * 0.08,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: screenSize.height * 0.008),
                     Text(
                       'Gestión de productos y stock',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: screenSize.width * 0.04,
                         color: Colors.white,
                         fontWeight: FontWeight.w300,
                       ),
@@ -169,6 +183,7 @@ class _InventoryPageState extends State<InventoryPage> {
                 ),
               ),
 
+              // Main content
               Expanded(
                 child: Container(
                   width: double.infinity,
@@ -181,8 +196,14 @@ class _InventoryPageState extends State<InventoryPage> {
                   ),
                   child: Column(
                     children: [
+                      // Search bar
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+                        padding: EdgeInsets.fromLTRB(
+                          screenSize.width * 0.06,
+                          screenSize.height * 0.02,
+                          screenSize.width * 0.06,
+                          screenSize.height * 0.016,
+                        ),
                         child: BlocBuilder<InventoryBloc, InventoryState>(
                           builder: (context, state) {
                             final isLoading =
@@ -200,6 +221,7 @@ class _InventoryPageState extends State<InventoryPage> {
                         ),
                       ),
 
+                      // Products list
                       Expanded(
                         child: BlocBuilder<InventoryBloc, InventoryState>(
                           builder: (context, state) {
@@ -211,7 +233,7 @@ class _InventoryPageState extends State<InventoryPage> {
 
                             if (state is InventoryWithStatsLoaded) {
                               if (state.products.isEmpty) {
-                                return _buildEmptyState();
+                                return _buildEmptyState(context, screenSize);
                               }
 
                               return RefreshIndicator(
@@ -221,12 +243,13 @@ class _InventoryPageState extends State<InventoryPage> {
                                 child: CustomScrollView(
                                   controller: _scrollController,
                                   slivers: [
+                                    // Stats section
                                     if (state.stats != null)
                                       SliverToBoxAdapter(
                                         child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 24,
-                                            vertical: 8,
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: screenSize.width * 0.06,
+                                            vertical: screenSize.height * 0.01,
                                           ),
                                           child: CompactInventoryStats(
                                             stats: state.stats!,
@@ -234,11 +257,12 @@ class _InventoryPageState extends State<InventoryPage> {
                                         ),
                                       ),
 
+                                    // Pagination info
                                     SliverToBoxAdapter(
                                       child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 4,
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: screenSize.width * 0.03,
+                                          vertical: screenSize.height * 0.004,
                                         ),
                                         child: PaginationInfo(
                                           currentPage: state.currentPage,
@@ -252,10 +276,13 @@ class _InventoryPageState extends State<InventoryPage> {
                                       ),
                                     ),
 
-                                    const SliverToBoxAdapter(
-                                      child: SizedBox(height: 16),
+                                    SliverToBoxAdapter(
+                                      child: SizedBox(
+                                        height: screenSize.height * 0.016,
+                                      ),
                                     ),
 
+                                    // Products list
                                     SliverList(
                                       delegate: SliverChildBuilderDelegate((
                                         context,
@@ -263,9 +290,9 @@ class _InventoryPageState extends State<InventoryPage> {
                                       ) {
                                         final product = state.products[index];
                                         return Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 10,
-                                            vertical: 4,
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: screenSize.width * 0.03,
+                                            vertical: screenSize.height * 0.004,
                                           ),
                                           child: InventoryCard(
                                             product: product,
@@ -279,13 +306,14 @@ class _InventoryPageState extends State<InventoryPage> {
                                       }, childCount: state.products.length),
                                     ),
 
+                                    // Pagination controls
                                     SliverToBoxAdapter(
                                       child: Padding(
-                                        padding: const EdgeInsets.fromLTRB(
-                                          24,
-                                          24,
-                                          24,
-                                          32,
+                                        padding: EdgeInsets.fromLTRB(
+                                          screenSize.width * 0.06,
+                                          screenSize.height * 0.024,
+                                          screenSize.width * 0.06,
+                                          screenSize.height * 0.032,
                                         ),
                                         child: Column(
                                           children: [
@@ -295,11 +323,14 @@ class _InventoryPageState extends State<InventoryPage> {
                                               isLoading: state.isLoadingMore,
                                               onPageChanged: _onPageChanged,
                                             ),
-                                            const SizedBox(height: 16),
+                                            SizedBox(
+                                              height: screenSize.height * 0.016,
+                                            ),
                                             Text(
                                               'Página ${state.currentPage} de ${state.totalPages}',
                                               style: TextStyle(
-                                                fontSize: 14,
+                                                fontSize:
+                                                    screenSize.width * 0.035,
                                                 color: AppColors.gray600,
                                               ),
                                             ),
@@ -314,7 +345,7 @@ class _InventoryPageState extends State<InventoryPage> {
 
                             if (state is InventoryLoaded) {
                               if (state.products.isEmpty) {
-                                return _buildEmptyState();
+                                return _buildEmptyState(context, screenSize);
                               }
 
                               return RefreshIndicator(
@@ -324,16 +355,17 @@ class _InventoryPageState extends State<InventoryPage> {
                                 child: CustomScrollView(
                                   controller: _scrollController,
                                   slivers: [
+                                    // Products count
                                     SliverToBoxAdapter(
                                       child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 24,
-                                          vertical: 8,
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: screenSize.width * 0.06,
+                                          vertical: screenSize.height * 0.01,
                                         ),
                                         child: Text(
                                           '${state.products.length} productos encontrados',
                                           style: TextStyle(
-                                            fontSize: 14,
+                                            fontSize: screenSize.width * 0.035,
                                             color: AppColors.gray600,
                                             fontWeight: FontWeight.w500,
                                           ),
@@ -341,10 +373,13 @@ class _InventoryPageState extends State<InventoryPage> {
                                       ),
                                     ),
 
-                                    const SliverToBoxAdapter(
-                                      child: SizedBox(height: 16),
+                                    SliverToBoxAdapter(
+                                      child: SizedBox(
+                                        height: screenSize.height * 0.016,
+                                      ),
                                     ),
 
+                                    // Products list
                                     SliverList(
                                       delegate: SliverChildBuilderDelegate((
                                         context,
@@ -352,9 +387,9 @@ class _InventoryPageState extends State<InventoryPage> {
                                       ) {
                                         final product = state.products[index];
                                         return Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 4,
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: screenSize.width * 0.04,
+                                            vertical: screenSize.height * 0.004,
                                           ),
                                           child: InventoryCard(
                                             product: product,
@@ -368,8 +403,10 @@ class _InventoryPageState extends State<InventoryPage> {
                                       }, childCount: state.products.length),
                                     ),
 
-                                    const SliverToBoxAdapter(
-                                      child: SizedBox(height: 80),
+                                    SliverToBoxAdapter(
+                                      child: SizedBox(
+                                        height: screenSize.height * 0.08,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -377,7 +414,11 @@ class _InventoryPageState extends State<InventoryPage> {
                             }
 
                             if (state is InventoryError) {
-                              return _buildErrorState(state);
+                              return _buildErrorState(
+                                state,
+                                context,
+                                screenSize,
+                              );
                             }
 
                             return const Center(
@@ -397,7 +438,7 @@ class _InventoryPageState extends State<InventoryPage> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context, Size screenSize) {
     return RefreshIndicator(
       onRefresh: () async {
         _inventoryBloc.add(RefreshInventory());
@@ -405,20 +446,23 @@ class _InventoryPageState extends State<InventoryPage> {
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         child: SizedBox(
-          height: MediaQuery.of(context).size.height * 0.6,
-          child: const Center(
+          height: screenSize.height * 0.6,
+          child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
                   Icons.inventory_2_outlined,
-                  size: 64,
+                  size: screenSize.width * 0.15,
                   color: AppColors.gray400,
                 ),
-                SizedBox(height: 16),
+                SizedBox(height: screenSize.height * 0.02),
                 Text(
                   'No se encontraron productos',
-                  style: TextStyle(fontSize: 16, color: AppColors.gray600),
+                  style: TextStyle(
+                    fontSize: screenSize.width * 0.04,
+                    color: AppColors.gray600,
+                  ),
                 ),
               ],
             ),
@@ -428,7 +472,11 @@ class _InventoryPageState extends State<InventoryPage> {
     );
   }
 
-  Widget _buildErrorState(InventoryError state) {
+  Widget _buildErrorState(
+    InventoryError state,
+    BuildContext context,
+    Size screenSize,
+  ) {
     return RefreshIndicator(
       onRefresh: () async {
         _inventoryBloc.add(RefreshInventory());
@@ -436,34 +484,44 @@ class _InventoryPageState extends State<InventoryPage> {
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         child: Container(
-          height: MediaQuery.of(context).size.height * 0.6,
-          padding: const EdgeInsets.all(24),
+          height: screenSize.height * 0.6,
+          padding: EdgeInsets.all(screenSize.width * 0.06),
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error_outline, size: 64, color: AppColors.red500),
-                const SizedBox(height: 16),
+                Icon(
+                  Icons.error_outline,
+                  size: screenSize.width * 0.15,
+                  color: AppColors.red500,
+                ),
+                SizedBox(height: screenSize.height * 0.02),
                 Text(
                   'Error cargando inventario',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: screenSize.width * 0.04,
                     color: AppColors.red600,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: screenSize.height * 0.01),
                 Text(
                   state.message,
-                  style: TextStyle(fontSize: 14, color: AppColors.gray600),
+                  style: TextStyle(
+                    fontSize: screenSize.width * 0.035,
+                    color: AppColors.gray600,
+                  ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: screenSize.height * 0.02),
                 ElevatedButton(
                   onPressed: () {
                     _inventoryBloc.add(RefreshInventory());
                   },
-                  child: const Text('Reintentar'),
+                  child: Text(
+                    'Reintentar',
+                    style: TextStyle(fontSize: screenSize.width * 0.04),
+                  ),
                 ),
               ],
             ),

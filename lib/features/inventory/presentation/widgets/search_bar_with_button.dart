@@ -57,25 +57,39 @@ class _SearchBarWithButtonState extends State<SearchBarWithButton> {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final isSmallScreen = screenSize.width < 360;
+    final isVerySmallScreen = screenSize.width < 320;
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.gray50,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(screenSize.width * 0.03),
         border: Border.all(color: AppColors.gray200),
       ),
       child: Row(
         children: [
+          // Campo de búsqueda
           Expanded(
             child: TextField(
               controller: widget.controller,
               onSubmitted: _onSubmitted,
               decoration: InputDecoration(
-                hintText: 'Buscar productos, marcas, categorías...',
-                hintStyle: TextStyle(color: AppColors.gray500, fontSize: 14),
+                hintText: isVerySmallScreen
+                    ? 'Buscar productos...'
+                    : 'Buscar productos, marcas, categorías...',
+                hintStyle: TextStyle(
+                  color: AppColors.gray500,
+                  fontSize: isSmallScreen
+                      ? screenSize.width * 0.035
+                      : screenSize.width * 0.038,
+                ),
                 prefixIcon: Icon(
                   Icons.search,
                   color: AppColors.gray500,
-                  size: 20,
+                  size: isSmallScreen
+                      ? screenSize.width * 0.045
+                      : screenSize.width * 0.05,
                 ),
                 suffixIcon: _hasText
                     ? IconButton(
@@ -83,44 +97,76 @@ class _SearchBarWithButtonState extends State<SearchBarWithButton> {
                         icon: Icon(
                           Icons.clear,
                           color: AppColors.gray500,
-                          size: 20,
+                          size: isSmallScreen
+                              ? screenSize.width * 0.045
+                              : screenSize.width * 0.05,
                         ),
                       )
                     : null,
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: screenSize.width * 0.04,
+                  vertical: isSmallScreen
+                      ? screenSize.height * 0.012
+                      : screenSize.height * 0.014,
                 ),
+                isDense: true,
               ),
-              style: const TextStyle(fontSize: 14, color: AppColors.gray900),
+              style: TextStyle(
+                fontSize: isSmallScreen
+                    ? screenSize.width * 0.038
+                    : screenSize.width * 0.04,
+                color: AppColors.gray900,
+              ),
             ),
           ),
+
+          // Botón de búsqueda
           Container(
-            margin: const EdgeInsets.only(right: 4),
+            margin: EdgeInsets.only(right: screenSize.width * 0.01),
             child: Material(
-              color: AppColors.blue500,
-              borderRadius: BorderRadius.circular(8),
+              color: widget.isLoading ? AppColors.gray400 : AppColors.blue500,
+              borderRadius: BorderRadius.circular(screenSize.width * 0.02),
               child: InkWell(
                 onTap: widget.isLoading ? null : widget.onSearch,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(screenSize.width * 0.02),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+                  constraints: BoxConstraints(
+                    minWidth: isVerySmallScreen
+                        ? screenSize.width * 0.12
+                        : screenSize.width * 0.14,
+                    minHeight: isSmallScreen
+                        ? screenSize.height * 0.045
+                        : screenSize.height * 0.05,
+                  ),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isSmallScreen
+                        ? screenSize.width * 0.03
+                        : screenSize.width * 0.04,
+                    vertical: screenSize.height * 0.012,
                   ),
                   child: widget.isLoading
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
+                      ? SizedBox(
+                          width: isSmallScreen
+                              ? screenSize.width * 0.035
+                              : screenSize.width * 0.04,
+                          height: isSmallScreen
+                              ? screenSize.width * 0.035
+                              : screenSize.width * 0.04,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
+                            valueColor: const AlwaysStoppedAnimation<Color>(
                               Colors.white,
                             ),
                           ),
                         )
-                      : const Icon(Icons.search, color: Colors.white, size: 20),
+                      : Icon(
+                          Icons.search,
+                          color: Colors.white,
+                          size: isSmallScreen
+                              ? screenSize.width * 0.045
+                              : screenSize.width * 0.05,
+                        ),
                 ),
               ),
             ),
