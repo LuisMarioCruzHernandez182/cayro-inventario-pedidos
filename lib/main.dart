@@ -11,6 +11,7 @@ import 'features/auth/presentation/pages/home_page.dart';
 import 'features/inventory/presentation/pages/update_stock_page.dart';
 import 'features/inventory/presentation/pages/inventory_page.dart';
 import 'features/orders/presentation/pages/orders_page.dart';
+import 'features/orders/presentation/pages/order_detail_page.dart';
 import 'features/auth/presentation/pages/profile_page.dart';
 
 void main() async {
@@ -59,6 +60,13 @@ class MyApp extends StatelessWidget {
           GoRoute(
             path: '/main/orders',
             builder: (context, state) => const OrdersPage(),
+          ),
+          GoRoute(
+            path: '/main/order-detail/:orderId',
+            builder: (context, state) {
+              final orderId = state.pathParameters['orderId']!;
+              return OrderDetailPage(orderId: orderId);
+            },
           ),
           GoRoute(
             path: '/main/profile',
