@@ -10,22 +10,18 @@ class InventoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
-    final isSmallScreen = screenSize.width < 360;
-    final isVerySmallScreen = screenSize.width < 320;
+    final stockStatus = _getStockStatus(product.totalAvailable);
 
-    return Card(
-      margin: EdgeInsets.symmetric(
-        horizontal: screenSize.width * 0.04,
-        vertical: screenSize.height * 0.01,
-      ),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(screenSize.width * 0.03),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.gray200),
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(screenSize.width * 0.03),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: EdgeInsets.all(screenSize.width * 0.04),
           child: Column(
@@ -46,6 +42,7 @@ class InventoryCard extends StatelessWidget {
                                 ? screenSize.width * 0.042
                                 : screenSize.width * 0.045,
                             fontWeight: FontWeight.bold,
+                            color: AppColors.gray900,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -67,24 +64,21 @@ class InventoryCard extends StatelessWidget {
                   ),
                   SizedBox(width: screenSize.width * 0.02),
                   Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: screenSize.width * 0.02,
-                      vertical: screenSize.height * 0.004,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: _getStockStatusColor(product.totalAvailable),
-                      borderRadius: BorderRadius.circular(
-                        screenSize.width * 0.03,
-                      ),
+                      color: stockStatus.backgroundColor,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.shadowColor),
                     ),
                     child: Text(
-                      _getStockStatusText(product.totalAvailable),
+                      stockStatus.text,
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: isVerySmallScreen
-                            ? screenSize.width * 0.028
-                            : screenSize.width * 0.032,
-                        fontWeight: FontWeight.w500,
+                        color: stockStatus.color,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -189,8 +183,8 @@ class InventoryCard extends StatelessWidget {
         vertical: screenSize.height * 0.004,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(screenSize.width * 0.02),
+        color: AppColors.shadowColor,
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -220,15 +214,37 @@ class InventoryCard extends StatelessWidget {
     );
   }
 
-  Color _getStockStatusColor(int stock) {
-    if (stock == 0) return AppColors.red500;
-    if (stock <= 5) return AppColors.orange500;
-    return AppColors.green500;
+  StockStatus _getStockStatus(int stock) {
+    if (stock == 0) {
+      return StockStatus(
+        text: 'Agotado',
+        color: AppColors.red500,
+        backgroundColor: AppColors.red50,
+      );
+    } else if (stock <= 5) {
+      return StockStatus(
+        text: 'Poco Stock',
+        color: AppColors.orange500,
+        backgroundColor: AppColors.orange50,
+      );
+    } else {
+      return StockStatus(
+        text: 'En Stock',
+        color: AppColors.green500,
+        backgroundColor: AppColors.green50,
+      );
+    }
   }
+}
 
-  String _getStockStatusText(int stock) {
-    if (stock == 0) return 'Sin stock';
-    if (stock <= 5) return 'Poco stock';
-    return 'En stock';
-  }
+class StockStatus {
+  final String text;
+  final Color color;
+  final Color backgroundColor;
+
+  StockStatus({
+    required this.text,
+    required this.color,
+    required this.backgroundColor,
+  });
 }

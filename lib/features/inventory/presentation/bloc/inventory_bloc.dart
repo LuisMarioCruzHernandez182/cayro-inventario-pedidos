@@ -36,6 +36,36 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     on<SearchInventoryWithButton>(_onSearchInventoryWithButton);
     on<NavigateToPage>(_onNavigateToPage);
     on<ClearSearch>(_onClearSearch);
+    on<LoadProductDetailWithVariants>(_onLoadProductDetailWithVariants);
+  }
+  Future<void> _onLoadProductDetailWithVariants(
+    LoadProductDetailWithVariants event,
+    Emitter<InventoryState> emit,
+  ) async {
+    emit(InventoryLoading());
+    try {
+      final productResult = await getProductByIdUseCase(event.productId);
+      final variantsResult = await getProductVariantsUseCase(event.productId);
+
+      productResult.fold(
+        (failure) => emit(InventoryError(message: failure.message)),
+        (product) {
+          variantsResult.fold(
+            (failure) => emit(InventoryError(message: failure.message)),
+            (variants) {
+              emit(
+                ProductDetailWithVariantsLoaded(
+                  product: product,
+                  variants: variants,
+                ),
+              );
+            },
+          );
+        },
+      );
+    } catch (e) {
+      emit(InventoryError(message: 'Error cargando producto y variantes: $e'));
+    }
   }
 
   Future<void> _onLoadInventory(
@@ -57,6 +87,7 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
         page: event.page,
         limit: event.limit,
         search: event.search,
+        stockStatus: event.stockStatus,
       );
 
       result.fold(
@@ -134,98 +165,46 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     Emitter<InventoryState> emit,
   ) async {
     if (_isLoadingInventory) return;
-
     _isLoadingInventory = true;
 
-    if (event.page == 1) {
-      emit(InventoryLoading());
-    }
+    if (event.page == 1) emit(InventoryLoading());
 
     try {
       final inventoryResult = await getInventoryUseCase(
         page: event.page,
         limit: event.limit,
         search: event.search,
+        stockStatus: event.stockStatus, // ✅ SE ENVÍA AL BACKEND
       );
 
       await inventoryResult.fold(
-        (failure) async {
-          emit(InventoryError(message: failure.message));
-        },
+        (failure) async => emit(InventoryError(message: failure.message)),
         (inventoryResponse) async {
-          if (state is InventoryWithStatsLoaded && event.page > 1) {
-            final currentState = state as InventoryWithStatsLoaded;
-            final updatedProducts = List.of(currentState.products)
-              ..addAll(inventoryResponse.products);
-            emit(
-              currentState.copyWith(
-                products: updatedProducts,
-                hasReachedMax: inventoryResponse.products.isEmpty,
-                currentPage: event.page,
-                currentSearch: event.search,
-                totalPages: inventoryResponse.pagination.totalPages,
-                totalProducts: inventoryResponse.pagination.total,
-              ),
-            );
-          } else {
-            emit(
-              InventoryWithStatsLoaded(
-                products: inventoryResponse.products,
-                hasReachedMax: inventoryResponse.products.isEmpty,
-                currentPage: event.page,
-                currentSearch: event.search,
-                isLoadingStats: true,
-                totalPages: inventoryResponse.pagination.totalPages,
-                totalProducts: inventoryResponse.pagination.total,
-              ),
-            );
+          emit(
+            InventoryWithStatsLoaded(
+              products: inventoryResponse.products,
+              hasReachedMax: inventoryResponse.products.isEmpty,
+              currentPage: event.page,
+              currentSearch: event.search,
+              currentStockStatus: event.stockStatus,
+              isLoadingStats: true,
+              totalPages: inventoryResponse.pagination.totalPages,
+              totalProducts: inventoryResponse.pagination.total,
+            ),
+          );
 
-            // Load stats after products are shown (solo en página 1)
-            if (event.page == 1) {
-              _isLoadingStats = true;
-              try {
-                final statsResult = await getInventoryStatsUseCase();
-
-                statsResult.fold(
-                  (failure) {
-                    // IMPORTANTE: Emitir estado actualizado sin stats pero sin error
-                    if (state is InventoryWithStatsLoaded) {
-                      final currentState = state as InventoryWithStatsLoaded;
-                      emit(
-                        currentState.copyWith(
-                          isLoadingStats: false,
-                          // stats permanece null
-                        ),
-                      );
-                    }
-                  },
-                  (stats) {
-                    if (state is InventoryWithStatsLoaded) {
-                      final currentState = state as InventoryWithStatsLoaded;
-                      emit(
-                        currentState.copyWith(
-                          stats: stats,
-                          isLoadingStats: false,
-                        ),
-                      );
-                    }
-                  },
-                );
-              } catch (e) {
-                if (state is InventoryWithStatsLoaded) {
-                  final currentState = state as InventoryWithStatsLoaded;
-                  emit(
-                    currentState.copyWith(
-                      isLoadingStats: false,
-                      // stats permanece null
-                    ),
-                  );
-                }
-              } finally {
-                _isLoadingStats = false;
-              }
+          // 🔁 Cargar estadísticas después de los productos
+          final statsResult = await getInventoryStatsUseCase();
+          statsResult.fold((_) {}, (stats) {
+            if (state is InventoryWithStatsLoaded) {
+              emit(
+                (state as InventoryWithStatsLoaded).copyWith(
+                  stats: stats,
+                  isLoadingStats: false,
+                ),
+              );
             }
-          }
+          });
         },
       );
     } catch (e) {
@@ -312,15 +291,15 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     RefreshInventory event,
     Emitter<InventoryState> emit,
   ) async {
-    _isLoadingInventory = false;
-    _isLoadingStats = false;
-
     if (state is InventoryWithStatsLoaded) {
       final currentState = state as InventoryWithStatsLoaded;
-      add(LoadInventoryWithStats(page: 1, search: currentState.currentSearch));
-    } else if (state is InventoryLoaded) {
-      final currentState = state as InventoryLoaded;
-      add(LoadInventoryWithStats(page: 1, search: currentState.currentSearch));
+      add(
+        LoadInventoryWithStats(
+          page: 1,
+          search: currentState.currentSearch,
+          stockStatus: currentState.currentStockStatus, // ✅ mantiene filtro
+        ),
+      );
     } else {
       add(const LoadInventoryWithStats(page: 1));
     }
@@ -346,19 +325,16 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     Emitter<InventoryState> emit,
   ) async {
     if (state is! InventoryWithStatsLoaded) return;
-
     final currentState = state as InventoryWithStatsLoaded;
 
     if (currentState.hasReachedMax || currentState.isLoadingMore) return;
-
     emit(currentState.copyWith(isLoadingMore: true));
-
-    final nextPage = currentState.currentPage + 1;
 
     add(
       LoadInventoryWithStats(
-        page: nextPage,
+        page: currentState.currentPage + 1,
         search: currentState.currentSearch,
+        stockStatus: currentState.currentStockStatus, // ✅ mantiene filtro
       ),
     );
   }
@@ -393,6 +369,7 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
         page: event.page,
         limit: 10,
         search: event.search,
+        stockStatus: event.stockStatus,
       );
 
       result.fold(

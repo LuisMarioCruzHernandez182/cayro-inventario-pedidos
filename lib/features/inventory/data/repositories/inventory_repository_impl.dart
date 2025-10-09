@@ -14,18 +14,20 @@ class InventoryRepositoryImpl implements InventoryRepository {
   InventoryRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<Either<Failure, InventoryResponseEntity>> getInventory({ 
+  Future<Either<Failure, InventoryResponseEntity>> getInventory({
     int page = 1,
     int limit = 10,
     String? search,
+    String? stockStatus,
   }) async {
     try {
       final response = await remoteDataSource.getInventory(
         page: page,
         limit: limit,
         search: search,
+        stockStatus: stockStatus,
       );
-      return Right(response); 
+      return Right(response);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } on NetworkException catch (e) {
