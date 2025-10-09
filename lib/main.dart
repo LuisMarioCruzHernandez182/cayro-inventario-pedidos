@@ -1,5 +1,5 @@
 // lib/main.dart
-import 'dart:async'; // 👈 necesario para StreamSubscription
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -35,7 +35,6 @@ void main() async {
   );
 }
 
-/// Helper para refrescar GoRouter cuando cambia un Stream (AuthBloc)
 class GoRouterRefreshStream extends ChangeNotifier {
   late final StreamSubscription<dynamic> _subscription;
   GoRouterRefreshStream(Stream<dynamic> stream) {
@@ -55,7 +54,6 @@ class MyApp extends StatelessWidget {
 
   late final GoRouter _router = GoRouter(
     initialLocation: '/',
-    // 👇 Se refresca cuando cambia el estado del AuthBloc
     refreshListenable: GoRouterRefreshStream(authBloc.stream),
     redirect: (context, state) {
       final authState = authBloc.state;
@@ -78,7 +76,6 @@ class MyApp extends StatelessWidget {
       GoRoute(path: '/', builder: (context, state) => const HomePage()),
       GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
 
-      // Shell principal
       ShellRoute(
         builder: (context, state, child) => MainShell(child: child),
         routes: [
@@ -123,7 +120,6 @@ class MyApp extends StatelessWidget {
               return UpdateStockPage(productId: productId);
             },
           ),
-          // 👇💥 mueve esta ruta aquí (dentro del ShellRoute)
           GoRoute(
             path: '/main/order-detail/:id',
             builder: (context, state) {
@@ -134,7 +130,6 @@ class MyApp extends StatelessWidget {
         ],
       ),
 
-      // Si también quieres permitir fuera del shell:
       GoRoute(
         path: '/order-detail/:id',
         builder: (context, state) {

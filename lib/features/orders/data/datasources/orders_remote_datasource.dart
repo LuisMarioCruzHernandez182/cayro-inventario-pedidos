@@ -7,7 +7,6 @@ class OrdersRemoteDataSource {
 
   OrdersRemoteDataSource({required this.client, required this.baseUrl});
 
-  // 🔹 Pedidos generales (para administrador o vista de todos)
   Future<Map<String, dynamic>> getOrders({
     String? search,
     String? status,
@@ -29,7 +28,6 @@ class OrdersRemoteDataSource {
     }
   }
 
-  // 🔹 Pedidos disponibles (sin tomar por ningún empleado)
   Future<Map<String, dynamic>> getAvailableOrders({
     String? search,
     String? status,
@@ -51,7 +49,6 @@ class OrdersRemoteDataSource {
     }
   }
 
-  // 🔹 Pedidos asignados al empleado actual
   Future<Map<String, dynamic>> getAssignedOrders(
     int employeeId, {
     String? status,
@@ -85,7 +82,6 @@ class OrdersRemoteDataSource {
     }
   }
 
-  // 🔹 Detalle de pedido individual
   Future<Map<String, dynamic>> getOrderDetail(String id) async {
     try {
       return await client.getJson('$baseUrl/orders/$id');
@@ -94,7 +90,6 @@ class OrdersRemoteDataSource {
     }
   }
 
-  // 🔹 Tomar pedido (asignar empleado)
   Future<void> takeOrder(String id, int employeeId) async {
     try {
       await client.postJson(
@@ -106,7 +101,6 @@ class OrdersRemoteDataSource {
     }
   }
 
-  // 🔹 Actualizar estado de un pedido
   Future<void> updateStatus(String id, String status) async {
     try {
       await client.postJson(
@@ -118,7 +112,6 @@ class OrdersRemoteDataSource {
     }
   }
 
-  // 🔹 Métricas generales del dashboard
   Future<Map<String, dynamic>> getMetrics() async {
     try {
       return await client.getJson('$baseUrl/orders/dashboard/metrics');

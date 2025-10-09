@@ -92,7 +92,7 @@ class OrderDetailModel {
       isTaken:
           map['isTaken'] == true ||
           map['employee'] !=
-              null, // si hay empleado asignado, se considera tomado
+              null, 
     );
   }
 }

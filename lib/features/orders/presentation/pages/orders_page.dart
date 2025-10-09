@@ -126,7 +126,6 @@ class _OrdersPageState extends State<OrdersPage> {
                       child: CustomScrollView(
                         controller: _scrollController,
                         slivers: [
-                          // 🔍 Buscador
                           SliverToBoxAdapter(
                             child: Padding(
                               padding: const EdgeInsets.fromLTRB(
@@ -139,7 +138,6 @@ class _OrdersPageState extends State<OrdersPage> {
                             ),
                           ),
 
-                          // 📊 Métricas
                           SliverToBoxAdapter(
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
@@ -226,7 +224,6 @@ class _OrdersPageState extends State<OrdersPage> {
                             },
                           ),
 
-                          // 🔹 Paginación
                           SliverToBoxAdapter(
                             child: Padding(
                               padding: const EdgeInsets.fromLTRB(

@@ -1,6 +1,5 @@
 part of 'orders_bloc.dart';
 
-/// 🔹 Clase base para todos los eventos del Bloc de Pedidos
 abstract class OrdersEvent extends Equatable {
   const OrdersEvent();
 
@@ -8,7 +7,6 @@ abstract class OrdersEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-/// 🔹 Cargar pedidos generales (por estado, búsqueda o paginación)
 class LoadOrdersEvent extends OrdersEvent {
   final String? search;
   final int page;
@@ -20,7 +18,6 @@ class LoadOrdersEvent extends OrdersEvent {
   List<Object?> get props => [search, page, status];
 }
 
-/// 🔹 Cargar pedidos asignados a un empleado específico
 class LoadAssignedOrdersEvent extends OrdersEvent {
   final int employeeId;
   final String? status;
@@ -38,7 +35,6 @@ class LoadAssignedOrdersEvent extends OrdersEvent {
   List<Object?> get props => [employeeId, status, search, page];
 }
 
-/// 🔹 Cargar detalle de un pedido
 class LoadOrderDetailEvent extends OrdersEvent {
   final String id;
 
@@ -48,7 +44,6 @@ class LoadOrderDetailEvent extends OrdersEvent {
   List<Object?> get props => [id];
 }
 
-/// 🔹 Tomar pedido (empleado lo asigna)
 class TakeOrderEvent extends OrdersEvent {
   final String id;
   final int employeeId;
@@ -59,7 +54,6 @@ class TakeOrderEvent extends OrdersEvent {
   List<Object?> get props => [id, employeeId];
 }
 
-/// 🔹 Actualizar estado del pedido (ej. PROCESSING, PACKED, SHIPPED)
 class UpdateStatusEvent extends OrdersEvent {
   final String id;
   final String status;
@@ -70,7 +64,6 @@ class UpdateStatusEvent extends OrdersEvent {
   List<Object?> get props => [id, status];
 }
 
-/// 🔹 Cargar métricas del dashboard (pedidos totales, ventas, estados)
 class LoadMetricsEvent extends OrdersEvent {
   const LoadMetricsEvent();
 }

@@ -46,7 +46,6 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     final currentIndex = _getCurrentIndex(context);
 
-    // ✅ Usa el mismo AuthBloc global, no crees otro nuevo
     return BlocProvider.value(
       value: context.read<AuthBloc>(),
       child: BlocListener<AuthBloc, AuthState>(

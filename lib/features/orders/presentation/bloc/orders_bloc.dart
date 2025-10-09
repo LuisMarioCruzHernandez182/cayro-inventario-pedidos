@@ -36,7 +36,6 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     on<LoadAssignedOrdersEvent>(_onLoadAssignedOrders);
   }
 
-  // 🔹 Cargar lista general de pedidos
   Future<void> _onLoadOrders(
     LoadOrdersEvent e,
     Emitter<OrdersState> emit,
@@ -58,7 +57,6 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     );
   }
 
-  // 🔹 Cargar detalle de un pedido
   Future<void> _onLoadOrderDetail(
     LoadOrderDetailEvent e,
     Emitter<OrdersState> emit,
@@ -72,7 +70,6 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     );
   }
 
-  // 🔹 Cargar pedidos asignados a un empleado
   Future<void> _onLoadAssignedOrders(
     LoadAssignedOrdersEvent e,
     Emitter<OrdersState> emit,
@@ -98,21 +95,17 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     );
   }
 
-  // 🔹 Tomar pedido (empleado lo asigna)
-  // ✅ versión final y segura del handler
   Future<void> _onTakeOrder(TakeOrderEvent e, Emitter<OrdersState> emit) async {
     emit(OrdersActionLoading());
 
     final result = await takeOrder(e.id, e.employeeId);
 
-    // 📌 NO usar await result.fold(...)
     if (result.isLeft()) {
       final failure = result.swap().getOrElse(() => throw Exception());
       emit(OrdersError(failure.message));
       return;
     }
 
-    // ✅ solo si fue exitoso, recargar el detalle
     final detailResult = await getOrderDetail(e.id);
 
     if (detailResult.isLeft()) {
@@ -124,7 +117,6 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     }
   }
 
-  // 🔹 Actualizar estado del pedido
   Future<void> _onUpdateStatus(
     UpdateStatusEvent e,
     Emitter<OrdersState> emit,
@@ -138,7 +130,6 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
         emit(OrdersError(failure.message));
       },
       (_) async {
-        // ✅ Actualiza el detalle después del cambio
         final detailResult = await getOrderDetail(e.id);
 
         await detailResult.fold(
@@ -149,7 +140,6 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     );
   }
 
-  // 🔹 Cargar métricas del dashboard
   Future<void> _onLoadMetrics(
     LoadMetricsEvent e,
     Emitter<OrdersState> emit,

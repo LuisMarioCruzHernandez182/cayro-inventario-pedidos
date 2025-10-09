@@ -13,7 +13,6 @@ class OrdersRepositoryImpl implements OrdersRepository {
 
   OrdersRepositoryImpl({required this.remoteDataSource});
 
-  // 🔹 Obtener lista general de pedidos (para admin o dashboard)
   @override
   Future<Either<Failure, OrdersPageEntity>> getOrders(
     String? search,
@@ -52,7 +51,6 @@ class OrdersRepositoryImpl implements OrdersRepository {
     }
   }
 
-  // 🔹 Obtener lista de pedidos asignados a un empleado específico
   @override
   Future<Either<Failure, OrdersPageEntity>> getAssignedOrders(
     int employeeId, [
@@ -95,7 +93,6 @@ class OrdersRepositoryImpl implements OrdersRepository {
     }
   }
 
-  // 🔹 Obtener detalle completo de un pedido
   @override
   Future<Either<Failure, OrderDetailEntity>> getOrderDetail(String id) async {
     try {
@@ -116,7 +113,6 @@ class OrdersRepositoryImpl implements OrdersRepository {
     }
   }
 
-  // 🔹 Tomar (asignar) un pedido
   @override
   Future<Either<Failure, void>> takeOrder(String id, int employeeId) async {
     try {
@@ -129,7 +125,6 @@ class OrdersRepositoryImpl implements OrdersRepository {
     }
   }
 
-  // 🔹 Actualizar estado del pedido
   @override
   Future<Either<Failure, void>> updateStatus(String id, String status) async {
     try {
@@ -142,7 +137,6 @@ class OrdersRepositoryImpl implements OrdersRepository {
     }
   }
 
-  // 🔹 Obtener métricas del dashboard
   @override
   Future<Either<Failure, Map<String, dynamic>>> getMetrics() async {
     try {

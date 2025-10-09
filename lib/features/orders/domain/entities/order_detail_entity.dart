@@ -3,14 +3,14 @@ import 'package:equatable/equatable.dart';
 class OrderDetailEntity extends Equatable {
   final String id;
   final String status;
-  final String userName; // nombre completo del cliente
-  final String? employeeName; // nombre completo del empleado (o null)
-  final String? address; // dirección formateada
-  final double subtotalAmount; // subtotal
-  final double shippingCost; // costo de envío
-  final double totalAmount; // total
-  final List<OrderItem> items; // productos del pedido
-  final bool isTaken; // 🔹 indica si el pedido ya fue tomado o no
+  final String userName;
+  final String? employeeName; 
+  final String? address; 
+  final double subtotalAmount; 
+  final double shippingCost; 
+  final double totalAmount; 
+  final List<OrderItem> items; 
+  final bool isTaken; 
 
   const OrderDetailEntity({
     required this.id,
@@ -22,7 +22,7 @@ class OrderDetailEntity extends Equatable {
     required this.shippingCost,
     required this.totalAmount,
     required this.items,
-    required this.isTaken, // 👈 nuevo campo obligatorio
+    required this.isTaken, 
   });
 
   @override
@@ -36,7 +36,7 @@ class OrderDetailEntity extends Equatable {
     shippingCost,
     totalAmount,
     items,
-    isTaken, // 👈 incluido en las props
+    isTaken, 
   ];
 }
 
@@ -47,7 +47,7 @@ class OrderItem extends Equatable {
   final int quantity;
   final double unitPrice;
   final double total;
-  final String? image; // url de la imagen (frontal si existe)
+  final String? image;
 
   const OrderItem({
     required this.productName,

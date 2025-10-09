@@ -77,7 +77,6 @@ class OrderDetailPage extends StatelessWidget {
     );
   }
 
-  // 🔹 Encabezado superior
   Widget _buildHeader(BuildContext context) {
     return Expanded(
       flex: 1,
@@ -128,7 +127,6 @@ class OrderDetailPage extends StatelessWidget {
     );
   }
 
-  // 🔹 Contenido principal
   Widget _buildOrderDetail(BuildContext context, OrderDetailEntity order) {
     return SingleChildScrollView(
       physics: const ClampingScrollPhysics(),
@@ -160,7 +158,6 @@ class OrderDetailPage extends StatelessWidget {
     );
   }
 
-  // 🔹 Asignación del pedido + botón “Tomar pedido”
   Widget _buildAssignment(
     String? employeeName,
     bool isTaken,
@@ -201,7 +198,6 @@ class OrderDetailPage extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // 🔹 Mostrar el botón solo si el pedido no está tomado
           if (!isTaken)
             ElevatedButton.icon(
               onPressed: () {
@@ -221,7 +217,6 @@ class OrderDetailPage extends StatelessWidget {
                   ),
                 );
 
-                // 🔄 Recargar el detalle actualizado
                 context.read<OrdersBloc>().add(LoadOrderDetailEvent(orderId));
               },
               icon: const Icon(Icons.assignment_turned_in),
@@ -243,7 +238,6 @@ class OrderDetailPage extends StatelessWidget {
     );
   }
 
-  // 🔹 Progreso del pedido
   Widget _buildProgress(String status) {
     final statuses = ['PROCESSING', 'PACKED', 'SHIPPED', 'DELIVERED'];
     final index = statuses.indexOf(status);
@@ -305,7 +299,6 @@ class OrderDetailPage extends StatelessWidget {
     );
   }
 
-  // 🔹 Dropdown de estado (sin “value” deprecado)
   Widget _buildStatusDropdown(BuildContext context, OrderDetailEntity order) {
     final allStatuses = [
       'PENDING',
@@ -402,7 +395,6 @@ class OrderDetailPage extends StatelessWidget {
     );
   }
 
-  // 🔹 Resumen del pedido
   Widget _buildSummary(OrderDetailEntity order) {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -488,7 +480,6 @@ class OrderDetailPage extends StatelessWidget {
     );
   }
 
-  // 🔹 Productos del pedido
   Widget _buildProducts(
     List<OrderItem> items,
     double total,

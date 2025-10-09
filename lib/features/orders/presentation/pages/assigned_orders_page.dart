@@ -50,7 +50,6 @@ class _AssignedOrdersPageState extends State<AssignedOrdersPage> {
     });
   }
 
-  // 🔹 Buscar
   void _onSearch() {
     if (_employeeId == null) return;
     setState(() {
@@ -67,7 +66,6 @@ class _AssignedOrdersPageState extends State<AssignedOrdersPage> {
     );
   }
 
-  // 🔹 Limpiar búsqueda
   void _onClearSearch() {
     if (_employeeId == null) return;
     _searchController.clear();
@@ -85,7 +83,6 @@ class _AssignedOrdersPageState extends State<AssignedOrdersPage> {
     );
   }
 
-  // 🔹 Filtrar por estado
   void _onFilter(String? status) {
     if (_employeeId == null) return;
     setState(() {
@@ -102,7 +99,6 @@ class _AssignedOrdersPageState extends State<AssignedOrdersPage> {
     );
   }
 
-  // 🔹 Limpiar todos los filtros
   void _onClearFilters() {
     if (_employeeId == null) return;
     _searchController.clear();
@@ -121,7 +117,6 @@ class _AssignedOrdersPageState extends State<AssignedOrdersPage> {
     );
   }
 
-  // 🔹 Cambiar página
   void _onPageChanged(int page) {
     if (_employeeId == null) return;
     setState(() => _currentPage = page);
@@ -282,7 +277,6 @@ class _AssignedOrdersPageState extends State<AssignedOrdersPage> {
     );
   }
 
-  // 🔹 Header
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 20),
@@ -310,7 +304,6 @@ class _AssignedOrdersPageState extends State<AssignedOrdersPage> {
     );
   }
 
-  // 🔹 Sin sesión
   Widget _buildNoSessionState() {
     return const Center(
       child: Padding(
@@ -320,7 +313,6 @@ class _AssignedOrdersPageState extends State<AssignedOrdersPage> {
     );
   }
 
-  // 🔹 SearchBar
   Widget _buildSearchBar() {
     return Container(
       decoration: BoxDecoration(
@@ -383,7 +375,6 @@ class _AssignedOrdersPageState extends State<AssignedOrdersPage> {
     );
   }
 
-  // 🔹 Filtros por estado
   Widget _buildStatusFilters() {
     final statuses = {
       'PROCESSING': Icons.timelapse_rounded,
@@ -430,7 +421,6 @@ class _AssignedOrdersPageState extends State<AssignedOrdersPage> {
               ),
             );
           }),
-          // 🔹 Botón "Limpiar filtros"
           if (_filterStatus != null || _currentSearch != null)
             GestureDetector(
               onTap: _onClearFilters,
@@ -470,7 +460,6 @@ class _AssignedOrdersPageState extends State<AssignedOrdersPage> {
     );
   }
 
-  // 🔹 Estado vacío con botón "Limpiar filtros"
   Widget _buildEmptyState(bool hasFilters) {
     return RefreshIndicator(
       onRefresh: () async => _onClearFilters(),
@@ -523,7 +512,6 @@ class _AssignedOrdersPageState extends State<AssignedOrdersPage> {
     );
   }
 
-  // 🔹 Tarjeta de pedido
   Widget _buildOrderCard(
     BuildContext context, {
     required String id,
@@ -625,7 +613,6 @@ class _AssignedOrdersPageState extends State<AssignedOrdersPage> {
     );
   }
 
-  // 🔹 Colores de estado
   (Color, Color) _statusColor(String status) {
     switch (status.toUpperCase()) {
       case 'PROCESSING':
@@ -641,7 +628,6 @@ class _AssignedOrdersPageState extends State<AssignedOrdersPage> {
     }
   }
 
-  // 🔹 Estado de error con botón limpiar filtros
   Widget _buildErrorState(String message) {
     return Center(
       child: Padding(

@@ -12,7 +12,6 @@ class LoginPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ Usa el AuthBloc global (no crear uno nuevo)
     return BlocProvider.value(
       value: context.read<AuthBloc>(),
       child: const LoginView(),
@@ -142,9 +141,7 @@ class _LoginViewState extends State<LoginView> {
                 ),
               ),
 
-              // =============================
-              // 🔹 FORMULARIO DE LOGIN
-              // =============================
+              
               Expanded(
                 flex: 4,
                 child: Container(
@@ -169,7 +166,7 @@ class _LoginViewState extends State<LoginView> {
                                 backgroundColor: Colors.green,
                               ),
                             );
-                            context.go('/main/inventory'); // ✅ ruta consistente
+                            context.go('/main/inventory'); 
                           } else if (state is AuthError) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
