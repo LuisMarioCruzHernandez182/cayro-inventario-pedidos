@@ -5,7 +5,6 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/widgets/buttons/primary_button.dart';
-import '../../../../app/di/injection_container.dart';
 import '../bloc/auth_bloc.dart';
 
 class LoginPage extends StatelessWidget {
@@ -13,8 +12,8 @@ class LoginPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => sl<AuthBloc>(),
+    return BlocProvider.value(
+      value: context.read<AuthBloc>(),
       child: const LoginView(),
     );
   }
@@ -34,9 +33,7 @@ class _LoginViewState extends State<LoginView> {
   bool _obscurePassword = true;
 
   void _handleLogin() {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     context.read<AuthBloc>().add(
       LoginRequested(
@@ -166,7 +163,7 @@ class _LoginViewState extends State<LoginView> {
                 ),
               ),
 
-              // Sección inferior (formulario)
+              
               Expanded(
                 flex: keyboardOpen ? 5 : (isSmallScreen ? 5 : 4),
                 child: Container(
@@ -187,8 +184,6 @@ class _LoginViewState extends State<LoginView> {
                     ),
                     child: SingleChildScrollView(
                       physics: const BouncingScrollPhysics(),
-                      keyboardDismissBehavior:
-                          ScrollViewKeyboardDismissBehavior.onDrag,
                       child: BlocListener<AuthBloc, AuthState>(
                         listener: (context, state) {
                           if (state is AuthAuthenticated) {
@@ -198,7 +193,7 @@ class _LoginViewState extends State<LoginView> {
                                 backgroundColor: Colors.green,
                               ),
                             );
-                            context.go('/main');
+                            context.go('/main/inventory'); 
                           } else if (state is AuthError) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
@@ -298,8 +293,6 @@ class _LoginViewState extends State<LoginView> {
                                   );
                                 },
                               ),
-
-                              SizedBox(height: screenSize.height * 0.01),
                             ],
                           ),
                         ),

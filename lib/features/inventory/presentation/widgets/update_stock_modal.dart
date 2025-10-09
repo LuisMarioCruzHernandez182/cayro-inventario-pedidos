@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/buttons/primary_button.dart';
 import '../../domain/entities/product_variant_entity.dart';
-
 class UpdateStockModal extends StatefulWidget {
   final ProductVariantEntity variant;
   final Function(String adjustmentType, int quantity, String? reason) onUpdate;
@@ -21,13 +20,11 @@ class UpdateStockModal extends StatefulWidget {
 class _UpdateStockModalState extends State<UpdateStockModal> {
   final _formKey = GlobalKey<FormState>();
   final _quantityController = TextEditingController();
-  final _reasonController = TextEditingController();
   String _adjustmentType = 'ADD';
 
   @override
   void dispose() {
     _quantityController.dispose();
-    _reasonController.dispose();
     super.dispose();
   }
 
@@ -35,11 +32,8 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
     if (!_formKey.currentState!.validate()) return;
 
     final quantity = int.parse(_quantityController.text);
-    final reason = _reasonController.text.trim().isEmpty
-        ? null
-        : _reasonController.text.trim();
 
-    widget.onUpdate(_adjustmentType, quantity, reason);
+    widget.onUpdate(_adjustmentType, quantity, null);
     Navigator.of(context).pop();
   }
 
@@ -99,7 +93,7 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Producto: ${widget.variant.color.name} - ${widget.variant.size.name}',
+                      'Variante: ${widget.variant.color.name} - ${widget.variant.size.name}',
                       style: TextStyle(
                         fontSize: isSmallScreen
                             ? screenSize.width * 0.04
@@ -142,7 +136,7 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                   children: [
                     // Tipo de ajuste
                     Text(
-                      'Tipo de Ajuste',
+                      'Tipo de ajuste',
                       style: TextStyle(
                         fontSize: isSmallScreen
                             ? screenSize.width * 0.042
@@ -180,6 +174,22 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                           ],
                         );
                       },
+                      style: ButtonStyle(
+                        backgroundColor:
+                            WidgetStateProperty.resolveWith<Color?>((states) {
+                              if (states.contains(WidgetState.selected)) {
+                                return AppColors.blue600;
+                              }
+                              return AppColors.gray100;
+                            }),
+                        foregroundColor:
+                            WidgetStateProperty.resolveWith<Color?>((states) {
+                              if (states.contains(WidgetState.selected)) {
+                                return Colors.white;
+                              }
+                              return AppColors.gray700;
+                            }),
+                      ),
                     ),
                     SizedBox(height: screenSize.height * 0.016),
 
@@ -208,12 +218,7 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                         ),
                         prefixIcon: Icon(
                           _adjustmentType == 'ADD' ? Icons.add : Icons.remove,
-                          color: _adjustmentType == 'ADD'
-                              ? AppColors.green500
-                              : AppColors.red500,
-                          size: isSmallScreen
-                              ? screenSize.width * 0.05
-                              : screenSize.width * 0.055,
+                          color: AppColors.blue600,
                         ),
                         contentPadding: EdgeInsets.symmetric(
                           horizontal: screenSize.width * 0.04,
@@ -233,7 +238,7 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                         }
                         final quantity = int.tryParse(value);
                         if (quantity == null || quantity <= 0) {
-                          return 'Por favor ingrese una cantidad válida';
+                          return 'Ingrese una cantidad válida';
                         }
                         if (_adjustmentType == 'SUBTRACT' &&
                             quantity > widget.variant.stock) {
@@ -242,42 +247,7 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                         return null;
                       },
                     ),
-                    SizedBox(height: screenSize.height * 0.016),
-
-                    // Campo de motivo
-                    Text(
-                      'Motivo (Opcional)',
-                      style: TextStyle(
-                        fontSize: isSmallScreen
-                            ? screenSize.width * 0.042
-                            : screenSize.width * 0.045,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.gray900,
-                      ),
-                    ),
-                    SizedBox(height: screenSize.height * 0.008),
-                    TextFormField(
-                      controller: _reasonController,
-                      maxLines: 3,
-                      decoration: InputDecoration(
-                        hintText: 'Ingrese el motivo del ajuste...',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(
-                            screenSize.width * 0.03,
-                          ),
-                        ),
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: screenSize.width * 0.04,
-                          vertical: screenSize.height * 0.012,
-                        ),
-                      ),
-                      style: TextStyle(
-                        fontSize: isSmallScreen
-                            ? screenSize.width * 0.04
-                            : screenSize.width * 0.042,
-                      ),
-                    ),
-                    SizedBox(height: screenSize.height * 0.024),
+                    const SizedBox(height: 24),
 
                     // Botón de acción
                     PrimaryButton(
@@ -285,9 +255,7 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                           ? 'Agregar Stock'
                           : 'Reducir Stock',
                       onPressed: _handleUpdate,
-                      backgroundColor: _adjustmentType == 'ADD'
-                          ? AppColors.green500
-                          : AppColors.red500,
+                      backgroundColor: AppColors.blue600,
                     ),
                   ],
                 ),

@@ -5,14 +5,12 @@ class SearchBarWithButton extends StatefulWidget {
   final TextEditingController controller;
   final VoidCallback onSearch;
   final VoidCallback? onClear;
-  final bool isLoading;
 
   const SearchBarWithButton({
     super.key,
     required this.controller,
     required this.onSearch,
     this.onClear,
-    this.isLoading = false,
   });
 
   @override
@@ -47,7 +45,6 @@ class _SearchBarWithButtonState extends State<SearchBarWithButton> {
   void _onClear() {
     widget.controller.clear();
     widget.onClear?.call();
-    // Trigger search with empty query
     widget.onSearch();
   }
 
@@ -93,7 +90,7 @@ class _SearchBarWithButtonState extends State<SearchBarWithButton> {
                 ),
                 suffixIcon: _hasText
                     ? IconButton(
-                        onPressed: widget.isLoading ? null : _onClear,
+                        onPressed: _onClear,
                         icon: Icon(
                           Icons.clear,
                           color: AppColors.gray500,
@@ -121,52 +118,17 @@ class _SearchBarWithButtonState extends State<SearchBarWithButton> {
             ),
           ),
 
-          // Botón de búsqueda
           Container(
             margin: EdgeInsets.only(right: screenSize.width * 0.01),
             child: Material(
               color: widget.isLoading ? AppColors.gray400 : AppColors.blue500,
               borderRadius: BorderRadius.circular(screenSize.width * 0.02),
               child: InkWell(
-                onTap: widget.isLoading ? null : widget.onSearch,
-                borderRadius: BorderRadius.circular(screenSize.width * 0.02),
-                child: Container(
-                  constraints: BoxConstraints(
-                    minWidth: isVerySmallScreen
-                        ? screenSize.width * 0.12
-                        : screenSize.width * 0.14,
-                    minHeight: isSmallScreen
-                        ? screenSize.height * 0.045
-                        : screenSize.height * 0.05,
-                  ),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isSmallScreen
-                        ? screenSize.width * 0.03
-                        : screenSize.width * 0.04,
-                    vertical: screenSize.height * 0.012,
-                  ),
-                  child: widget.isLoading
-                      ? SizedBox(
-                          width: isSmallScreen
-                              ? screenSize.width * 0.035
-                              : screenSize.width * 0.04,
-                          height: isSmallScreen
-                              ? screenSize.width * 0.035
-                              : screenSize.width * 0.04,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
-                        )
-                      : Icon(
-                          Icons.search,
-                          color: Colors.white,
-                          size: isSmallScreen
-                              ? screenSize.width * 0.045
-                              : screenSize.width * 0.05,
-                        ),
+                onTap: widget.onSearch,
+                borderRadius: BorderRadius.circular(8),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Icon(Icons.search, color: Colors.white, size: 20),
                 ),
               ),
             ),

@@ -10,6 +10,7 @@ abstract class InventoryRepository {
     int page = 1,
     int limit = 10,
     String? search,
+    String? stockStatus,
   });
 
   Future<Either<Failure, InventoryStatsEntity>> getInventoryStats();

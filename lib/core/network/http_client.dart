@@ -62,6 +62,37 @@ class HttpClient extends http.BaseClient {
     }
   }
 
+  Future<List<dynamic>> getJsonList(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      final response = await super.get(uri);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        if (response.body.isEmpty) return <dynamic>[];
+
+        try {
+          final data = json.decode(response.body);
+          if (data is List<dynamic>) {
+            return data;
+          } else {
+            throw ServerException('Expected a JSON list but got a map');
+          }
+        } catch (e) {
+          throw ServerException('Invalid JSON list response: $e');
+        }
+      } else {
+        final errorMessage = _extractErrorMessage(
+          response.body,
+          response.statusCode,
+        );
+        throw ServerException(errorMessage);
+      }
+    } catch (e) {
+      if (e is ServerException) rethrow;
+      throw ServerException('Network request failed: $e');
+    }
+  }
+
   Future<Map<String, dynamic>> getJson(String url) async {
     try {
       final uri = Uri.parse(url);

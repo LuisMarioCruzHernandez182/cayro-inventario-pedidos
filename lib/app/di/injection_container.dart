@@ -30,113 +30,122 @@ import '../../features/inventory/domain/usecases/get_product_variants_usecase.da
 import '../../features/inventory/domain/usecases/update_variant_stock_usecase.dart';
 import '../../features/inventory/presentation/bloc/inventory_bloc.dart';
 
+import '../../features/orders/data/datasources/orders_remote_datasource.dart';
+import '../../features/orders/data/repositories/orders_repository_impl.dart';
+import '../../features/orders/domain/repositories/orders_repository.dart';
+import '../../features/orders/domain/usecases/get_order_detail_usecase.dart';
+import '../../features/orders/domain/usecases/get_orders_metrics_usecase.dart';
+import '../../features/orders/domain/usecases/get_orders_usecase.dart';
+import '../../features/orders/domain/usecases/take_order_usecase.dart';
+import '../../features/orders/domain/usecases/update_order_status_usecase.dart';
+import '../../features/orders/domain/usecases/get_assigned_orders_usecase.dart'; 
+import '../../features/orders/presentation/bloc/orders_bloc.dart';
+
 final sl = GetIt.instance;
 
 Future<void> init() async {
+
   final sharedPreferences = await SharedPreferences.getInstance();
   sl.registerLazySingleton<SharedPreferences>(() => sharedPreferences);
   sl.registerLazySingleton<http.Client>(() => http.Client());
 
   sl.registerLazySingleton<AuthLocalDataSource>(
-    () => AuthLocalDataSourceImpl(sharedPreferences: sl<SharedPreferences>()),
+    () => AuthLocalDataSourceImpl(sharedPreferences: sl()),
   );
 
   sl.registerLazySingleton<HttpClient>(
-    () => HttpClient(
-      client: sl<http.Client>(),
-      authLocalDataSource: sl<AuthLocalDataSource>(),
-    ),
+    () => HttpClient(client: sl(), authLocalDataSource: sl()),
   );
 
   sl.registerLazySingleton<AuthRemoteDataSource>(
     () => AuthRemoteDataSourceImpl(
-      client: sl<HttpClient>(),
+      client: sl(),
       baseUrl: AppConstants.fullApiUrl,
     ),
   );
 
   sl.registerLazySingleton<AuthRepository>(
-    () => AuthRepositoryImpl(
-      remoteDataSource: sl<AuthRemoteDataSource>(),
-      localDataSource: sl<AuthLocalDataSource>(),
-    ),
+    () => AuthRepositoryImpl(remoteDataSource: sl(), localDataSource: sl()),
   );
 
-  sl.registerLazySingleton<LoginUseCase>(
-    () => LoginUseCase(sl<AuthRepository>()),
-  );
-  sl.registerLazySingleton<LogoutUseCase>(
-    () => LogoutUseCase(sl<AuthRepository>()),
-  );
-  sl.registerLazySingleton<GetCurrentUserUseCase>(
-    () => GetCurrentUserUseCase(sl<AuthRepository>()),
-  );
+  sl.registerLazySingleton(() => LoginUseCase(sl()));
+  sl.registerLazySingleton(() => LogoutUseCase(sl()));
+  sl.registerLazySingleton(() => GetCurrentUserUseCase(sl()));
 
-  sl.registerFactory<AuthBloc>(
+  sl.registerFactory(
     () => AuthBloc(
-      loginUseCase: sl<LoginUseCase>(),
-      logoutUseCase: sl<LogoutUseCase>(),
-      getCurrentUserUseCase: sl<GetCurrentUserUseCase>(),
+      loginUseCase: sl(),
+      logoutUseCase: sl(),
+      getCurrentUserUseCase: sl(),
     ),
   );
 
   sl.registerLazySingleton<StatsRemoteDataSource>(
     () => StatsRemoteDataSourceImpl(
-      client: sl<HttpClient>(),
+      client: sl(),
       baseUrl: AppConstants.fullApiUrl,
     ),
   );
 
   sl.registerLazySingleton<StatsRepository>(
-    () => StatsRepositoryImpl(remoteDataSource: sl<StatsRemoteDataSource>()),
+    () => StatsRepositoryImpl(remoteDataSource: sl()),
   );
 
-  sl.registerLazySingleton<GetCurrentMonthStatsUseCase>(
-    () => GetCurrentMonthStatsUseCase(sl<StatsRepository>()),
-  );
+  sl.registerLazySingleton(() => GetCurrentMonthStatsUseCase(sl()));
 
-  sl.registerFactory<StatsBloc>(
-    () => StatsBloc(
-      getCurrentMonthStatsUseCase: sl<GetCurrentMonthStatsUseCase>(),
-    ),
-  );
+  sl.registerFactory(() => StatsBloc(getCurrentMonthStatsUseCase: sl()));
 
   sl.registerLazySingleton<InventoryRemoteDataSource>(
     () => InventoryRemoteDataSourceImpl(
-      client: sl<HttpClient>(),
+      client: sl(),
       baseUrl: AppConstants.fullApiUrl,
     ),
   );
 
   sl.registerLazySingleton<InventoryRepository>(
-    () => InventoryRepositoryImpl(
-      remoteDataSource: sl<InventoryRemoteDataSource>(),
+    () => InventoryRepositoryImpl(remoteDataSource: sl()),
+  );
+
+  sl.registerLazySingleton(() => GetInventoryUseCase(sl()));
+  sl.registerLazySingleton(() => GetInventoryStatsUseCase(sl()));
+  sl.registerLazySingleton(() => GetProductByIdUseCase(sl()));
+  sl.registerLazySingleton(() => GetProductVariantsUseCase(sl()));
+  sl.registerLazySingleton(() => UpdateVariantStockUseCase(sl()));
+
+  sl.registerFactory(
+    () => InventoryBloc(
+      getInventoryUseCase: sl(),
+      getInventoryStatsUseCase: sl(),
+      getProductByIdUseCase: sl(),
+      getProductVariantsUseCase: sl(),
+      updateVariantStockUseCase: sl(),
     ),
   );
 
-  sl.registerLazySingleton<GetInventoryUseCase>(
-    () => GetInventoryUseCase(sl<InventoryRepository>()),
-  );
-  sl.registerLazySingleton<GetInventoryStatsUseCase>(
-    () => GetInventoryStatsUseCase(sl<InventoryRepository>()),
-  );
-  sl.registerLazySingleton<GetProductByIdUseCase>(
-    () => GetProductByIdUseCase(sl<InventoryRepository>()),
-  );
-  sl.registerLazySingleton<GetProductVariantsUseCase>(
-    () => GetProductVariantsUseCase(sl<InventoryRepository>()),
-  );
-  sl.registerLazySingleton<UpdateVariantStockUseCase>(
-    () => UpdateVariantStockUseCase(sl<InventoryRepository>()),
+  sl.registerLazySingleton<OrdersRemoteDataSource>(
+    () =>
+        OrdersRemoteDataSource(client: sl(), baseUrl: AppConstants.fullApiUrl),
   );
 
-  sl.registerFactory<InventoryBloc>(
-    () => InventoryBloc(
-      getInventoryUseCase: sl<GetInventoryUseCase>(),
-      getInventoryStatsUseCase: sl<GetInventoryStatsUseCase>(),
-      getProductByIdUseCase: sl<GetProductByIdUseCase>(),
-      getProductVariantsUseCase: sl<GetProductVariantsUseCase>(),
-      updateVariantStockUseCase: sl<UpdateVariantStockUseCase>(),
+  sl.registerLazySingleton<OrdersRepository>(
+    () => OrdersRepositoryImpl(remoteDataSource: sl()),
+  );
+
+  sl.registerLazySingleton(() => GetOrdersUseCase(sl()));
+  sl.registerLazySingleton(() => GetOrderDetailUseCase(sl()));
+  sl.registerLazySingleton(() => TakeOrderUseCase(sl()));
+  sl.registerLazySingleton(() => UpdateOrderStatusUseCase(sl()));
+  sl.registerLazySingleton(() => GetOrdersMetricsUseCase(sl()));
+  sl.registerLazySingleton(() => GetAssignedOrdersUseCase(sl())); 
+
+  sl.registerFactory(
+    () => OrdersBloc(
+      getOrders: sl(),
+      getOrderDetail: sl(),
+      takeOrder: sl(),
+      updateStatus: sl(),
+      getMetrics: sl(),
+      getAssignedOrders: sl(), 
     ),
   );
 }

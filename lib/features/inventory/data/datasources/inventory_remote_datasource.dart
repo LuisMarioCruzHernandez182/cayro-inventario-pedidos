@@ -14,6 +14,7 @@ abstract class InventoryRemoteDataSource {
     int page = 1,
     int limit = 10,
     String? search,
+    String? stockStatus,
   });
 
   Future<InventoryStatsModel> getInventoryStats();
@@ -43,15 +44,17 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
     int page = 1,
     int limit = 10,
     String? search,
+    String? stockStatus,
   }) async {
     try {
       String url = '$baseUrl/inventory?page=$page&limit=$limit';
       if (search != null && search.isNotEmpty) {
-        final encodedSearch = Uri.encodeComponent(search);
-        url += '&search=$encodedSearch';
+        url += '&search=${Uri.encodeComponent(search)}';
       }
 
-      developer.log('[InventoryRemoteDataSource] Getting inventory from: $url');
+      if (stockStatus != null && stockStatus.isNotEmpty) {
+        url += '&stockStatus=$stockStatus';
+      }
       final response = await client.getJson(url);
       developer.log(
         '[InventoryRemoteDataSource] Inventory response: ${jsonEncode(response)}',
@@ -123,24 +126,23 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
   @override
   Future<List<ProductVariantModel>> getProductVariants(int productId) async {
     try {
+      final url = '$baseUrl/inventory/product/$productId/variants';
       developer.log(
-        '[InventoryRemoteDataSource] Getting product variants from: $baseUrl/inventory/product/$productId/variants',
+        '[InventoryRemoteDataSource] Getting product variants from: $url',
       );
-      final response = await client.getJson(
-        '$baseUrl/inventory/product/$productId/variants',
-      );
+
+      final response = await client.getJsonList(url);
+
       developer.log('[InventoryRemoteDataSource] Variants response: $response');
 
-      final variants = (response as List<dynamic>)
+      final variants = response
           .map((variant) => ProductVariantModel.fromJson(variant))
           .toList();
 
       return variants;
     } catch (e) {
       developer.log('[InventoryRemoteDataSource] Error getting variants: $e');
-      if (e is ServerException) {
-        rethrow;
-      }
+      if (e is ServerException) rethrow;
       throw NetworkException('Error de conexión: $e');
     }
   }
