@@ -13,65 +13,113 @@ class OrderDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ValueNotifier<bool> isUpdating = ValueNotifier(false);
+
     return BlocProvider(
       create: (_) => sl<OrdersBloc>()..add(LoadOrderDetailEvent(orderId)),
       child: Scaffold(
         resizeToAvoidBottomInset: false,
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [AppColors.blue600, AppColors.blue500, AppColors.blue400],
-            ),
-          ),
-          child: SafeArea(
-            child: Column(
-              children: [
-                _buildHeader(context),
-                Expanded(
-                  flex: 6,
-                  child: Container(
-                    width: double.infinity,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(32),
-                        topRight: Radius.circular(32),
+        body: Stack(
+          children: [
+            BlocListener<OrdersBloc, OrdersState>(
+              listener: (context, state) {
+                // 🔹 Control del loader
+                if (state is OrdersActionLoading) {
+                  isUpdating.value =
+                      true; // empieza acción (tomar / actualizar)
+                } else if (state is OrderDetailLoaded || state is OrdersError) {
+                  isUpdating.value = false; // termina o hay error
+                }
+              },
+              child: BlocBuilder<OrdersBloc, OrdersState>(
+                builder: (context, state) {
+                  if (state is OrdersLoading || isUpdating.value) {
+                    return const Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(color: AppColors.blue600),
+                          SizedBox(height: 16),
+                          Text(
+                            "Cargando pedido...",
+                            style: TextStyle(
+                              color: AppColors.blue600,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    child: BlocBuilder<OrdersBloc, OrdersState>(
-                      builder: (context, state) {
-                        if (state is OrdersLoading) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        } else if (state is OrdersError) {
-                          return Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(20),
-                              child: Text(
-                                state.message,
-                                style: const TextStyle(
-                                  color: AppColors.red500,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
+                    );
+                  } else if (state is OrdersError) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Text(
+                          state.message,
+                          style: const TextStyle(
+                            color: AppColors.red500,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    );
+                  } else if (state is OrderDetailLoaded) {
+                    return Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            AppColors.blue600,
+                            AppColors.blue500,
+                            AppColors.blue400,
+                          ],
+                        ),
+                      ),
+                      child: SafeArea(
+                        child: Column(
+                          children: [
+                            _buildHeader(context),
+                            Expanded(
+                              flex: 6,
+                              child: Container(
+                                width: double.infinity,
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(32),
+                                    topRight: Radius.circular(32),
+                                  ),
                                 ),
-                                textAlign: TextAlign.center,
+                                child: SingleChildScrollView(
+                                  physics: const ClampingScrollPhysics(),
+                                  padding: const EdgeInsets.fromLTRB(
+                                    24,
+                                    24,
+                                    24,
+                                    16,
+                                  ),
+                                  child: _buildOrderDetail(
+                                    context,
+                                    state.order,
+                                    isUpdating,
+                                  ),
+                                ),
                               ),
                             ),
-                          );
-                        } else if (state is OrderDetailLoaded) {
-                          return _buildOrderDetail(context, state.order);
-                        }
-                        return const SizedBox.shrink();
-                      },
-                    ),
-                  ),
-                ),
-              ],
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -90,7 +138,8 @@ class OrderDetailPage extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: IconButton(
-                onPressed: () => context.pop(),
+                // 🔹 Al regresar, se notifica para recargar OrdersPage
+                onPressed: () => context.pop(true),
                 icon: const Icon(Icons.arrow_back, color: AppColors.blue600),
               ),
             ),
@@ -127,34 +176,35 @@ class OrderDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildOrderDetail(BuildContext context, OrderDetailEntity order) {
-    return SingleChildScrollView(
-      physics: const ClampingScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSummary(order),
-          const SizedBox(height: 20),
-          _buildAssignment(
-            order.employeeName,
-            order.isTaken,
-            context,
-            order.id,
-          ),
-          const SizedBox(height: 20),
-          _buildProgress(order.status),
-          const SizedBox(height: 20),
-          _buildStatusDropdown(context, order),
-          const SizedBox(height: 20),
-          _buildProducts(
-            order.items,
-            order.totalAmount,
-            order.subtotalAmount,
-            order.shippingCost,
-          ),
-        ],
-      ),
+  Widget _buildOrderDetail(
+    BuildContext context,
+    OrderDetailEntity order,
+    ValueNotifier<bool> isUpdating,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSummary(order),
+        const SizedBox(height: 20),
+        _buildAssignment(
+          order.employeeName,
+          order.isTaken,
+          context,
+          order.id,
+          isUpdating,
+        ),
+        const SizedBox(height: 20),
+        _buildProgress(order.status),
+        const SizedBox(height: 20),
+        _buildStatusDropdown(context, order, isUpdating),
+        const SizedBox(height: 20),
+        _buildProducts(
+          order.items,
+          order.totalAmount,
+          order.subtotalAmount,
+          order.shippingCost,
+        ),
+      ],
     );
   }
 
@@ -163,6 +213,7 @@ class OrderDetailPage extends StatelessWidget {
     bool isTaken,
     BuildContext context,
     String orderId,
+    ValueNotifier<bool> isUpdating,
   ) {
     final assigned = (employeeName ?? '').isNotEmpty;
 
@@ -200,7 +251,7 @@ class OrderDetailPage extends StatelessWidget {
 
           if (!isTaken)
             ElevatedButton.icon(
-              onPressed: () {
+              onPressed: () async {
                 final authState = context.read<AuthBloc>().state;
                 final employeeId = (authState is AuthAuthenticated)
                     ? int.tryParse(authState.user.id.toString()) ?? 0
@@ -216,8 +267,6 @@ class OrderDetailPage extends StatelessWidget {
                     backgroundColor: AppColors.green600,
                   ),
                 );
-
-                context.read<OrdersBloc>().add(LoadOrderDetailEvent(orderId));
               },
               icon: const Icon(Icons.assignment_turned_in),
               label: const Text('Tomar pedido'),
@@ -238,68 +287,11 @@ class OrderDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildProgress(String status) {
-    final statuses = ['PROCESSING', 'PACKED', 'SHIPPED', 'DELIVERED'];
-    final index = statuses.indexOf(status);
-    final progress = (index + 1) / statuses.length;
-
-    final Map<String, String> labels = {
-      'PROCESSING': 'Procesando',
-      'PACKED': 'Empacado',
-      'SHIPPED': 'Enviado',
-      'DELIVERED': 'Entregado',
-    };
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: _cardDecoration(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Progreso del Pedido',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.gray900,
-            ),
-          ),
-          const SizedBox(height: 12),
-          LinearProgressIndicator(
-            value: progress,
-            minHeight: 8,
-            borderRadius: BorderRadius.circular(8),
-            backgroundColor: AppColors.gray200,
-            color: AppColors.blue600,
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              for (var s in statuses)
-                Expanded(
-                  child: Text(
-                    labels[s]!,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: s == status
-                          ? AppColors.blue600
-                          : AppColors.gray500,
-                      fontWeight: s == status
-                          ? FontWeight.w600
-                          : FontWeight.w400,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusDropdown(BuildContext context, OrderDetailEntity order) {
+  Widget _buildStatusDropdown(
+    BuildContext context,
+    OrderDetailEntity order,
+    ValueNotifier<bool> isUpdating,
+  ) {
     final allStatuses = [
       'PENDING',
       'PROCESSING',
@@ -309,7 +301,8 @@ class OrderDetailPage extends StatelessWidget {
       'CANCELLED',
     ];
 
-    final Map<String, String> labels = {
+    final labels = {
+      'PENDING': 'Pendiente',
       'PROCESSING': 'Procesando',
       'PACKED': 'Empacado',
       'SHIPPED': 'Enviado',
@@ -337,28 +330,15 @@ class OrderDetailPage extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                initialValue: selectedStatus,
+                value: selectedStatus,
                 isExpanded: true,
-                items: [
-                  for (var s in allStatuses)
-                    DropdownMenuItem(
-                      value: s,
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.circle,
-                            size: 10,
-                            color: s == order.status
-                                ? Colors.amber
-                                : AppColors.blue600,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(labels[s] ?? s),
-                        ],
-                      ),
-                    ),
-                ],
-                onChanged: (value) {
+                items: allStatuses.map((s) {
+                  return DropdownMenuItem(
+                    value: s,
+                    child: Text(labels[s] ?? s),
+                  );
+                }).toList(),
+                onChanged: (value) async {
                   if (value != null && value != order.status) {
                     setState(() => selectedStatus = value);
                     context.read<OrdersBloc>().add(
@@ -395,7 +375,78 @@ class OrderDetailPage extends StatelessWidget {
     );
   }
 
+  Widget _buildProgress(String status) {
+    final statuses = ['PROCESSING', 'PACKED', 'SHIPPED', 'DELIVERED'];
+    final index = statuses.indexOf(status);
+    final progress = (index + 1) / statuses.length;
+
+    final labels = {
+      'PROCESSING': 'Procesando',
+      'PACKED': 'Empacado',
+      'SHIPPED': 'Enviado',
+      'DELIVERED': 'Entregado',
+    };
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: _cardDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Progreso del Pedido',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.gray900,
+            ),
+          ),
+          const SizedBox(height: 12),
+          LinearProgressIndicator(
+            value: progress,
+            minHeight: 8,
+            borderRadius: BorderRadius.circular(8),
+            backgroundColor: AppColors.gray200,
+            color: AppColors.blue600,
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: statuses
+                .map(
+                  (s) => Expanded(
+                    child: Text(
+                      labels[s]!,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: s == status
+                            ? AppColors.blue600
+                            : AppColors.gray500,
+                        fontWeight: s == status
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSummary(OrderDetailEntity order) {
+    final statusLabels = {
+      'PENDING': 'Pendiente',
+      'PROCESSING': 'Procesando',
+      'PACKED': 'Empacado',
+      'SHIPPED': 'Enviado',
+      'DELIVERED': 'Entregado',
+      'CANCELLED': 'Cancelado',
+    };
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: _cardDecoration(),
@@ -424,7 +475,7 @@ class OrderDetailPage extends StatelessWidget {
                   border: Border.all(color: AppColors.amber100),
                 ),
                 child: Text(
-                  order.status,
+                  statusLabels[order.status] ?? order.status,
                   style: const TextStyle(
                     color: AppColors.amber600,
                     fontWeight: FontWeight.w600,
