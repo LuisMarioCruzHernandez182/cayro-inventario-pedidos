@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:stock_control_app/features/orders/presentation/pages/widgets/pagination_controls.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../app/di/injection_container.dart';
+import '../bloc/orders_bloc.dart';
 
 class OrdersPage extends StatefulWidget {
   const OrdersPage({super.key});
@@ -11,235 +15,311 @@ class OrdersPage extends StatefulWidget {
 
 class _OrdersPageState extends State<OrdersPage> {
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
 
-  void _onSearch() {
-    final query = _searchController.text.trim();
-    debugPrint("Buscando pedido: $query");
+  int _currentPage = 1;
+  String? _currentSearch;
+  bool _hasFilters = false;
+
+  late OrdersBloc _ordersBloc;
+
+  @override
+  void initState() {
+    super.initState();
+    _ordersBloc = sl<OrdersBloc>()
+      ..add(LoadOrdersEvent(search: null, page: 1, status: 'PENDING'))
+      ..add(const LoadMetricsEvent());
   }
 
-  void _onClear() {
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _scrollController.dispose();
+    _ordersBloc.close();
+    super.dispose();
+  }
+
+  void _scrollToTop() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  void _onSearch() {
+    setState(() {
+      _currentSearch = _searchController.text.trim();
+      _currentPage = 1;
+      _hasFilters = _currentSearch != null && _currentSearch!.isNotEmpty;
+    });
+    _ordersBloc.add(
+      LoadOrdersEvent(
+        search: _currentSearch,
+        page: _currentPage,
+        status: 'PENDING',
+      ),
+    );
+    _scrollToTop();
+  }
+
+  void _onClearFilters() {
     _searchController.clear();
-    setState(() {});
+    setState(() {
+      _currentSearch = null;
+      _currentPage = 1;
+      _hasFilters = false;
+    });
+    _ordersBloc.add(LoadOrdersEvent(search: null, page: 1, status: 'PENDING'));
+    _scrollToTop();
+  }
+
+  void _onPageChanged(int page) {
+    setState(() => _currentPage = page);
+    _ordersBloc.add(
+      LoadOrdersEvent(search: _currentSearch, page: page, status: 'PENDING'),
+    );
+    _scrollToTop();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppColors.blue600, AppColors.blue500, AppColors.blue400],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+    return BlocProvider(
+      create: (_) => _ordersBloc,
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppColors.blue600, AppColors.blue500, AppColors.blue400],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // 🔹 Encabezado
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                child: Column(
-                  children: [
-                    const Text(
-                      'Pedidos',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Gestión y seguimiento de pedidos',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w300,
+          child: SafeArea(
+            child: Column(
+              children: [
+                _buildHeader(),
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(32),
+                        topRight: Radius.circular(32),
                       ),
                     ),
-                  ],
-                ),
-              ),
-
-              // 🔹 Contenido principal
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(32),
-                      topRight: Radius.circular(32),
-                    ),
-                  ),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 20,
-                    ),
-                    child: Column(
-                      children: [
-                        // 🔍 Buscador para pedidos
-                        _buildSearchBar(),
-                        const SizedBox(height: 24),
-
-                        // 🔹 Métricas principales
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildStatCard(
-                                title: 'Total Pedidos',
-                                value: '5',
-                                subtitle: '3 activos',
-                                color: AppColors.blue500,
-                                backgroundColor: AppColors.blue50,
-                                icon: Icons.receipt_long_outlined,
+                    child: RefreshIndicator(
+                      onRefresh: () async {
+                        _ordersBloc.add(const LoadMetricsEvent());
+                        _ordersBloc.add(
+                          LoadOrdersEvent(
+                            search: _currentSearch,
+                            page: 1,
+                            status: 'PENDING',
+                          ),
+                        );
+                      },
+                      child: CustomScrollView(
+                        controller: _scrollController,
+                        slivers: [
+                          // 🔍 Buscador
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                20,
+                                20,
+                                20,
+                                16,
                               ),
+                              child: _buildSearchBar(),
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _buildStatCard(
-                                title: 'Ventas del Mes',
-                                value: '\$12.5K',
-                                subtitle: '+12% vs mes anterior',
-                                color: AppColors.green600,
-                                backgroundColor: AppColors.green50,
-                                icon: Icons.attach_money,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
+                          ),
 
-                        // 🔹 Estados
-                        Row(
-                          children: [
-                            // 🔹 Procesando
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () {
-                                  // Navegar a pedidos procesando
+                          // 📊 Métricas
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                              ),
+                              child: BlocBuilder<OrdersBloc, OrdersState>(
+                                buildWhen: (p, c) => c is OrdersMetricsLoaded,
+                                builder: (context, state) {
+                                  if (state is OrdersMetricsLoaded) {
+                                    return _buildMetricsSection(state);
+                                  }
+                                  return const SizedBox.shrink();
                                 },
-                                child: _buildSmallStatCard(
-                                  value: '1',
-                                  title: 'Procesando',
-                                  color: AppColors.amber500,
-                                  backgroundColor: AppColors.amber50,
-                                  icon: Icons.timelapse_rounded,
-                                ),
                               ),
                             ),
-                            const SizedBox(width: 8),
+                          ),
 
-                            // 🔹 Empacado
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () {
-                                  // Navegar a pedidos empacados
+                          // 📦 Lista de pedidos
+                          BlocBuilder<OrdersBloc, OrdersState>(
+                            buildWhen: (p, c) =>
+                                c is OrdersLoaded ||
+                                c is OrdersLoading ||
+                                c is OrdersError,
+                            builder: (context, state) {
+                              if (state is OrdersLoading) {
+                                return const SliverFillRemaining(
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                );
+                              } else if (state is OrdersError) {
+                                return SliverFillRemaining(
+                                  child: Center(
+                                    child: Text(
+                                      state.message,
+                                      style: TextStyle(
+                                        color: AppColors.red500,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              } else if (state is OrdersLoaded) {
+                                if (state.orders.isEmpty) {
+                                  return SliverFillRemaining(
+                                    child: _buildEmptyState(),
+                                  );
+                                }
+                                return SliverList(
+                                  delegate: SliverChildBuilderDelegate((
+                                    context,
+                                    i,
+                                  ) {
+                                    final o = state.orders[i];
+                                    final color = _statusColor(o.status);
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                        vertical: 6,
+                                      ),
+                                      child: _buildOrderCard(
+                                        context,
+                                        id: o.id,
+                                        saleReference: o.saleReference,
+                                        customer: o.userName,
+                                        total:
+                                            '\$${o.totalAmount.toStringAsFixed(2)}',
+                                        date: o.createdAt,
+                                        status: o.status,
+                                        productsCount: o.productsCount,
+                                        employee:
+                                            o.employeeName ?? 'Sin asignar',
+                                        color: color.$1,
+                                        backgroundColor: color.$2,
+                                      ),
+                                    );
+                                  }, childCount: state.orders.length),
+                                );
+                              }
+                              return const SliverFillRemaining(
+                                child: SizedBox.shrink(),
+                              );
+                            },
+                          ),
+
+                          // 🔹 Paginación
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                20,
+                                24,
+                                20,
+                                40,
+                              ),
+                              child: BlocBuilder<OrdersBloc, OrdersState>(
+                                buildWhen: (p, c) => c is OrdersLoaded,
+                                builder: (context, s) {
+                                  if (s is OrdersLoaded) {
+                                    return OrdersPaginationControls(
+                                      currentPage: _currentPage,
+                                      totalPages: s.totalPages,
+                                      isLoading: s is OrdersLoading,
+                                      onPageChanged: _onPageChanged,
+                                    );
+                                  }
+                                  return const SizedBox.shrink();
                                 },
-                                child: _buildSmallStatCard(
-                                  value: '1',
-                                  title: 'Empacado',
-                                  color: AppColors.blue500,
-                                  backgroundColor: AppColors.blue50,
-                                  icon: Icons.inventory_2_rounded,
-                                ),
                               ),
                             ),
-                            const SizedBox(width: 8),
-
-                            // 🔹 Enviado
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () {
-                                  // Navegar a pedidos enviados
-                                },
-                                child: _buildSmallStatCard(
-                                  value: '1',
-                                  title: 'Enviado',
-                                  color: AppColors.purple500,
-                                  backgroundColor: AppColors.purple100,
-                                  icon: Icons.local_shipping_rounded,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-
-                            // 🔹 Entregado
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () {
-                                  // Navegar a pedidos entregados
-                                },
-                                child: _buildSmallStatCard(
-                                  value: '1',
-                                  title: 'Entregado',
-                                  color: AppColors.green500,
-                                  backgroundColor: AppColors.green50,
-                                  icon: Icons.check_circle_rounded,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 28),
-
-                        // 🔹 Lista de pedidos
-                        _buildOrderCard(
-                          context,
-                          orderId: 'ORD-001',
-                          customer: 'María García',
-                          total: '\$1,579.98',
-                          date: '2024-01-15',
-                          status: 'Entregado',
-                          productsCount: 3,
-                          employee: 'Ana Díaz',
-                          color: AppColors.green500,
-                          backgroundColor: AppColors.green50,
-                        ),
-                        const SizedBox(height: 12),
-                        _buildOrderCard(
-                          context,
-                          orderId: 'ORD-002',
-                          customer: 'Pedro López',
-                          total: '\$299.99',
-                          date: '2024-01-20',
-                          status: 'Procesando',
-                          productsCount: 2,
-                          employee: 'Sin asignar',
-                          color: AppColors.amber500,
-                          backgroundColor: AppColors.amber50,
-                        ),
-                        const SizedBox(height: 12),
-                        _buildOrderCard(
-                          context,
-                          orderId: 'ORD-003',
-                          customer: 'Carlos Rodríguez',
-                          total: '\$845.50',
-                          date: '2024-01-18',
-                          status: 'Enviado',
-                          productsCount: 4,
-                          employee: 'Luis Martínez',
-                          color: AppColors.purple500,
-                          backgroundColor: AppColors.purple100,
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  // 🔍 Buscador personalizado
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      child: Column(
+        children: [
+          const Text(
+            'Pedidos Pendientes',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Gestiona los pedidos nuevos que aún no han sido tomados',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.9),
+              fontSize: 16,
+              fontWeight: FontWeight.w300,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetricsSection(OrdersMetricsLoaded state) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildStatCard(
+            title: 'Pedidos Pendientes',
+            value: '${state.statusCount['PENDING'] ?? 0}',
+            subtitle: 'Esperando asignación',
+            color: AppColors.amber600,
+            backgroundColor: AppColors.amber50,
+            icon: Icons.access_time,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildStatCard(
+            title: 'Pedidos en Proceso',
+            value: '${state.statusCount['PROCESSING'] ?? 0}',
+            subtitle: 'Tomados por empleados',
+            color: AppColors.blue500,
+            backgroundColor: AppColors.blue50,
+            icon: Icons.work_outline,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildSearchBar() {
     return Container(
       decoration: BoxDecoration(
@@ -252,10 +332,9 @@ class _OrdersPageState extends State<OrdersPage> {
           Expanded(
             child: TextField(
               controller: _searchController,
-              onChanged: (_) => setState(() {}),
               onSubmitted: (_) => _onSearch(),
               decoration: InputDecoration(
-                hintText: 'Buscar pedidos, clientes o estados...',
+                hintText: 'Buscar pedidos o clientes...',
                 hintStyle: TextStyle(color: AppColors.gray500, fontSize: 14),
                 prefixIcon: const Icon(
                   Icons.search,
@@ -264,7 +343,7 @@ class _OrdersPageState extends State<OrdersPage> {
                 ),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                        onPressed: _onClear,
+                        onPressed: _onClearFilters,
                         icon: const Icon(
                           Icons.clear,
                           color: AppColors.gray500,
@@ -278,7 +357,6 @@ class _OrdersPageState extends State<OrdersPage> {
                   vertical: 12,
                 ),
               ),
-              style: const TextStyle(fontSize: 14, color: AppColors.gray900),
             ),
           ),
           Container(
@@ -289,16 +367,9 @@ class _OrdersPageState extends State<OrdersPage> {
               child: InkWell(
                 onTap: _onSearch,
                 borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  child: const Icon(
-                    Icons.search,
-                    color: Colors.white,
-                    size: 20,
-                  ),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Icon(Icons.search, color: Colors.white, size: 20),
                 ),
               ),
             ),
@@ -308,7 +379,97 @@ class _OrdersPageState extends State<OrdersPage> {
     );
   }
 
-  // 🟦 Tarjeta de estadísticas
+  Widget _buildEmptyState() {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: Container(
+        width: double.infinity,
+        height: MediaQuery.of(context).size.height * 0.7,
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(26),
+              decoration: BoxDecoration(
+                color: AppColors.blue50,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.blue400.withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.receipt_long_outlined,
+                size: 70,
+                color: AppColors.blue600,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              _hasFilters
+                  ? 'No se encontraron pedidos con los filtros aplicados.'
+                  : 'No se encontraron pedidos pendientes.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.gray800,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _hasFilters
+                  ? 'Puedes limpiar los filtros para volver a ver todos los pedidos pendientes.'
+                  : 'Agrega pedidos o verifica la conexión al servidor.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 15,
+                color: AppColors.gray600,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 32),
+            if (_hasFilters)
+              ElevatedButton.icon(
+                onPressed: _onClearFilters,
+                icon: const Icon(
+                  Icons.filter_alt_off_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
+                label: const Text(
+                  'Limpiar filtros',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.blue600,
+                  elevation: 8,
+                  shadowColor: AppColors.blue400.withValues(alpha: 0.4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 30,
+                    vertical: 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  foregroundColor: Colors.white,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildStatCard({
     required String title,
     required String value,
@@ -322,7 +483,7 @@ class _OrdersPageState extends State<OrdersPage> {
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -357,7 +518,7 @@ class _OrdersPageState extends State<OrdersPage> {
             subtitle,
             style: TextStyle(
               fontSize: 11,
-              color: color.withOpacity(0.7),
+              color: color.withValues(alpha: 0.7),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -366,59 +527,10 @@ class _OrdersPageState extends State<OrdersPage> {
     );
   }
 
-  // 🟨 Tarjeta pequeña de estadísticas
-  Widget _buildSmallStatCard({
-    required String value,
-    required String title,
-    required Color color,
-    required Color backgroundColor,
-    required IconData icon,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Icon(icon, color: Colors.white, size: 16),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 10,
-              color: color,
-              fontWeight: FontWeight.w600,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  // 🟩 Tarjeta individual de pedido con navegación
   Widget _buildOrderCard(
     BuildContext context, {
-    required String orderId,
+    required String id,
+    required String saleReference,
     required String customer,
     required String total,
     required String date,
@@ -442,7 +554,7 @@ class _OrdersPageState extends State<OrdersPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                orderId,
+                saleReference,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
@@ -457,7 +569,7 @@ class _OrdersPageState extends State<OrdersPage> {
                 decoration: BoxDecoration(
                   color: backgroundColor,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: color.withOpacity(0.3)),
+                  border: Border.all(color: color.withValues(alpha: 0.3)),
                 ),
                 child: Text(
                   status,
@@ -517,16 +629,12 @@ class _OrdersPageState extends State<OrdersPage> {
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
-              onPressed: () => context.push('/main/order-detail/$orderId'),
+              onPressed: () => context.push('/order-detail/$id'),
               style: TextButton.styleFrom(
                 foregroundColor: AppColors.blue600,
                 textStyle: const TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
                 ),
               ),
               child: const Text('Ver detalles'),
@@ -535,5 +643,14 @@ class _OrdersPageState extends State<OrdersPage> {
         ],
       ),
     );
+  }
+
+  (Color, Color) _statusColor(String status) {
+    switch (status.toUpperCase()) {
+      case 'PENDING':
+        return (AppColors.amber500, AppColors.amber50);
+      default:
+        return (AppColors.gray700, AppColors.gray100);
+    }
   }
 }

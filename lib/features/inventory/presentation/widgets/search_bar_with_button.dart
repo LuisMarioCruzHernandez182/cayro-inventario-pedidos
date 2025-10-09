@@ -5,14 +5,12 @@ class SearchBarWithButton extends StatefulWidget {
   final TextEditingController controller;
   final VoidCallback onSearch;
   final VoidCallback? onClear;
-  final bool isLoading;
 
   const SearchBarWithButton({
     super.key,
     required this.controller,
     required this.onSearch,
     this.onClear,
-    this.isLoading = false,
   });
 
   @override
@@ -47,7 +45,6 @@ class _SearchBarWithButtonState extends State<SearchBarWithButton> {
   void _onClear() {
     widget.controller.clear();
     widget.onClear?.call();
-    // Trigger search with empty query
     widget.onSearch();
   }
 
@@ -79,7 +76,7 @@ class _SearchBarWithButtonState extends State<SearchBarWithButton> {
                 ),
                 suffixIcon: _hasText
                     ? IconButton(
-                        onPressed: widget.isLoading ? null : _onClear,
+                        onPressed: _onClear,
                         icon: Icon(
                           Icons.clear,
                           color: AppColors.gray500,
@@ -96,31 +93,18 @@ class _SearchBarWithButtonState extends State<SearchBarWithButton> {
               style: const TextStyle(fontSize: 14, color: AppColors.gray900),
             ),
           ),
+
           Container(
             margin: const EdgeInsets.only(right: 4),
             child: Material(
               color: AppColors.blue500,
               borderRadius: BorderRadius.circular(8),
               child: InkWell(
-                onTap: widget.isLoading ? null : widget.onSearch,
+                onTap: widget.onSearch,
                 borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  child: widget.isLoading
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
-                        )
-                      : const Icon(Icons.search, color: Colors.white, size: 20),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Icon(Icons.search, color: Colors.white, size: 20),
                 ),
               ),
             ),

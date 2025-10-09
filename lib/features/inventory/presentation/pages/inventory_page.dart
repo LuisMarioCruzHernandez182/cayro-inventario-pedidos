@@ -197,16 +197,10 @@ class _InventoryPageState extends State<InventoryPage> {
                         padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
                         child: BlocBuilder<InventoryBloc, InventoryState>(
                           builder: (context, state) {
-                            final isLoading =
-                                state is InventoryLoading ||
-                                (state is InventoryWithStatsLoaded &&
-                                    state.isLoadingMore);
-
                             return SearchBarWithButton(
                               controller: _searchController,
                               onSearch: _onSearch,
                               onClear: _onClearSearch,
-                              isLoading: isLoading,
                             );
                           },
                         ),
@@ -274,7 +268,6 @@ class _InventoryPageState extends State<InventoryPage> {
                                       child: SizedBox(height: 16),
                                     ),
 
-                                    // 🔹 Lista de productos
                                     SliverList(
                                       delegate: SliverChildBuilderDelegate((
                                         context,

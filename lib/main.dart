@@ -1,9 +1,12 @@
+// lib/main.dart
+import 'dart:async'; // 👈 necesario para StreamSubscription
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:stock_control_app/features/orders/presentation/pages/assigned_orders_page.dart';
 import 'package:stock_control_app/features/stats/presentation/bloc/stats_bloc.dart';
-
 import 'app/di/injection_container.dart' as di;
+
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 import 'features/auth/presentation/pages/main_shell.dart';
@@ -17,16 +20,44 @@ import 'features/auth/presentation/pages/profile_page.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await di.init();
-  runApp(MyApp());
+
+  final authBloc = di.sl<AuthBloc>()..add(CheckAuthStatus());
+  final statsBloc = di.sl<StatsBloc>();
+
+  runApp(
+    MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthBloc>.value(value: authBloc),
+        BlocProvider<StatsBloc>.value(value: statsBloc),
+      ],
+      child: MyApp(authBloc: authBloc),
+    ),
+  );
+}
+
+/// Helper para refrescar GoRouter cuando cambia un Stream (AuthBloc)
+class GoRouterRefreshStream extends ChangeNotifier {
+  late final StreamSubscription<dynamic> _subscription;
+  GoRouterRefreshStream(Stream<dynamic> stream) {
+    _subscription = stream.listen((_) => notifyListeners());
+  }
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
 }
 
 class MyApp extends StatelessWidget {
-  MyApp({super.key});
+  final AuthBloc authBloc;
 
-  final GoRouter _router = GoRouter(
+  MyApp({super.key, required this.authBloc});
+
+  late final GoRouter _router = GoRouter(
     initialLocation: '/',
+    // 👇 Se refresca cuando cambia el estado del AuthBloc
+    refreshListenable: GoRouterRefreshStream(authBloc.stream),
     redirect: (context, state) {
-      final authBloc = di.sl<AuthBloc>();
       final authState = authBloc.state;
 
       final isGoingToLogin = state.matchedLocation == '/login';
@@ -46,6 +77,8 @@ class MyApp extends StatelessWidget {
     routes: [
       GoRoute(path: '/', builder: (context, state) => const HomePage()),
       GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
+
+      // Shell principal
       ShellRoute(
         builder: (context, state, child) => MainShell(child: child),
         routes: [
@@ -62,11 +95,8 @@ class MyApp extends StatelessWidget {
             builder: (context, state) => const OrdersPage(),
           ),
           GoRoute(
-            path: '/main/order-detail/:orderId',
-            builder: (context, state) {
-              final orderId = state.pathParameters['orderId']!;
-              return OrderDetailPage(orderId: orderId);
-            },
+            path: '/main/assigned-orders',
+            builder: (context, state) => const AssignedOrdersPage(),
           ),
           GoRoute(
             path: '/main/profile',
@@ -79,6 +109,9 @@ class MyApp extends StatelessWidget {
                   case 1:
                     context.go('/main/orders');
                     break;
+                  case 2:
+                    context.go('/main/assigned-orders');
+                    break;
                 }
               },
             ),
@@ -90,7 +123,24 @@ class MyApp extends StatelessWidget {
               return UpdateStockPage(productId: productId);
             },
           ),
+          // 👇💥 mueve esta ruta aquí (dentro del ShellRoute)
+          GoRoute(
+            path: '/main/order-detail/:id',
+            builder: (context, state) {
+              final id = state.pathParameters['id']!;
+              return OrderDetailPage(orderId: id);
+            },
+          ),
         ],
+      ),
+
+      // Si también quieres permitir fuera del shell:
+      GoRoute(
+        path: '/order-detail/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return OrderDetailPage(orderId: id);
+        },
       ),
     ],
     errorBuilder: (context, state) =>
@@ -99,13 +149,12 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(
-          create: (context) => di.sl<AuthBloc>()..add(CheckAuthStatus()),
-        ),
-        BlocProvider(create: (context) => di.sl<StatsBloc>()),
-      ],
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state is AuthUnauthenticated) {
+          context.go('/');
+        }
+      },
       child: MaterialApp.router(
         title: 'Cayro Uniformes',
         theme: ThemeData(

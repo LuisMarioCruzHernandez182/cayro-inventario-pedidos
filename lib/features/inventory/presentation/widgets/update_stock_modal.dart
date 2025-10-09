@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/buttons/primary_button.dart';
 import '../../domain/entities/product_variant_entity.dart';
-
 class UpdateStockModal extends StatefulWidget {
   final ProductVariantEntity variant;
   final Function(String adjustmentType, int quantity, String? reason) onUpdate;
@@ -51,7 +50,6 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 🔹 Título y botón cerrar
               Row(
                 children: [
                   Expanded(
@@ -72,7 +70,6 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
               ),
               const SizedBox(height: 16),
 
-              // 🔹 Información de la variante
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -104,7 +101,6 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
               ),
               const SizedBox(height: 20),
 
-              // 🔹 Formulario
               Form(
                 key: _formKey,
                 child: Column(
@@ -120,7 +116,6 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                     ),
                     const SizedBox(height: 8),
 
-                    // 🔹 Botones agregar / reducir
                     SegmentedButton<String>(
                       segments: const [
                         ButtonSegment<String>(
@@ -159,7 +154,6 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                     ),
                     const SizedBox(height: 16),
 
-                    // 🔹 Campo de cantidad
                     Text(
                       'Cantidad',
                       style: TextStyle(
@@ -200,7 +194,6 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                     ),
                     const SizedBox(height: 24),
 
-                    // 🔹 Botón confirmar
                     PrimaryButton(
                       text: _adjustmentType == 'ADD'
                           ? 'Agregar Stock'
