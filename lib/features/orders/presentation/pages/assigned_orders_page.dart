@@ -377,6 +377,13 @@ class _AssignedOrdersPageState extends State<AssignedOrdersPage> {
 
   Widget _buildStatusFilters() {
     final statuses = {
+      'PROCESSING': 'Procesando',
+      'PACKED': 'Empacado',
+      'SHIPPED': 'Enviado',
+      'DELIVERED': 'Entregado',
+    };
+
+    final icons = {
       'PROCESSING': Icons.timelapse_rounded,
       'PACKED': Icons.inventory_2_rounded,
       'SHIPPED': Icons.local_shipping_rounded,
@@ -403,13 +410,13 @@ class _AssignedOrdersPageState extends State<AssignedOrdersPage> {
                 child: Row(
                   children: [
                     Icon(
-                      entry.value,
+                      icons[entry.key],
                       color: isActive ? Colors.white : color,
                       size: 18,
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      entry.key,
+                      entry.value,
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -524,6 +531,17 @@ class _AssignedOrdersPageState extends State<AssignedOrdersPage> {
     required Color color,
     required Color backgroundColor,
   }) {
+    // Traducción del estado
+    final statusLabel =
+        {
+          'PROCESSING': 'Procesando',
+          'PACKED': 'Empacado',
+          'SHIPPED': 'Enviado',
+          'DELIVERED': 'Entregado',
+          'PENDING': 'Pendiente',
+        }[status] ??
+        status;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -556,7 +574,7 @@ class _AssignedOrdersPageState extends State<AssignedOrdersPage> {
                   border: Border.all(color: color.withValues(alpha: 0.3)),
                 ),
                 child: Text(
-                  status,
+                  statusLabel,
                   style: TextStyle(
                     color: color,
                     fontWeight: FontWeight.w600,
@@ -597,7 +615,26 @@ class _AssignedOrdersPageState extends State<AssignedOrdersPage> {
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
-              onPressed: () => context.push('/main/order-detail/$id'),
+              onPressed: () async {
+                final updated = await context.push('/main/order-detail/$id');
+                if (updated == true && context.mounted && _employeeId != null) {
+                  _ordersBloc.add(
+                    LoadAssignedOrdersEvent(
+                      employeeId: _employeeId!,
+                      search: _currentSearch,
+                      page: _currentPage,
+                      status: _filterStatus,
+                    ),
+                  );
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Pedidos actualizados correctamente'),
+                      backgroundColor: AppColors.green600,
+                    ),
+                  );
+                }
+              },
               style: TextButton.styleFrom(
                 foregroundColor: AppColors.blue600,
                 textStyle: const TextStyle(

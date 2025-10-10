@@ -16,11 +16,12 @@ import 'features/inventory/presentation/pages/inventory_page.dart';
 import 'features/orders/presentation/pages/orders_page.dart';
 import 'features/orders/presentation/pages/order_detail_page.dart';
 import 'features/auth/presentation/pages/profile_page.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await di.init();
-
+  await initializeDateFormatting('es_MX', null);
   final authBloc = di.sl<AuthBloc>()..add(CheckAuthStatus());
   final statsBloc = di.sl<StatsBloc>();
 

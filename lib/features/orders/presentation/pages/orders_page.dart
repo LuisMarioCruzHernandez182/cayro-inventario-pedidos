@@ -388,17 +388,6 @@ class _OrdersPageState extends State<OrdersPage> {
           children: [
             Container(
               padding: const EdgeInsets.all(26),
-              decoration: BoxDecoration(
-                color: AppColors.blue50,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.blue400.withValues(alpha: 0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
               child: const Icon(
                 Icons.receipt_long_outlined,
                 size: 70,
@@ -418,47 +407,23 @@ class _OrdersPageState extends State<OrdersPage> {
               ),
             ),
             const SizedBox(height: 12),
-            Text(
-              _hasFilters
-                  ? 'Puedes limpiar los filtros para volver a ver todos los pedidos pendientes.'
-                  : 'Agrega pedidos o verifica la conexión al servidor.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 15,
-                color: AppColors.gray600,
-                height: 1.4,
-              ),
-            ),
+
             const SizedBox(height: 32),
             if (_hasFilters)
               ElevatedButton.icon(
                 onPressed: _onClearFilters,
-                icon: const Icon(
-                  Icons.filter_alt_off_rounded,
-                  color: Colors.white,
-                  size: 22,
-                ),
-                label: const Text(
-                  'Limpiar filtros',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.3,
-                  ),
-                ),
+                icon: const Icon(Icons.filter_alt_off, size: 18),
+                label: const Text('Limpiar filtros'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.blue600,
-                  elevation: 8,
-                  shadowColor: AppColors.blue400.withValues(alpha: 0.4),
+                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 30,
-                    vertical: 16,
+                    horizontal: 24,
+                    vertical: 12,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  foregroundColor: Colors.white,
                 ),
               ),
           ],
@@ -626,7 +591,20 @@ class _OrdersPageState extends State<OrdersPage> {
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
-              onPressed: () => context.push('/order-detail/$id'),
+              onPressed: () async {
+                final updated = await context.push('/order-detail/$id');
+                if (updated == true && context.mounted) {
+                  _ordersBloc.add(
+                    LoadOrdersEvent(
+                      search: _currentSearch,
+                      page: _currentPage,
+                      status: 'PENDING',
+                    ),
+                  );
+                  _ordersBloc.add(const LoadMetricsEvent());
+                }
+              },
+
               style: TextButton.styleFrom(
                 foregroundColor: AppColors.blue600,
                 textStyle: const TextStyle(

@@ -8,6 +8,7 @@ import '../../domain/usecases/take_order_usecase.dart';
 import '../../domain/usecases/update_order_status_usecase.dart';
 import '../../domain/usecases/get_orders_metrics_usecase.dart';
 import '../../domain/usecases/get_assigned_orders_usecase.dart';
+import '../../domain/usecases/send_tracking_email_usecase.dart';
 
 part 'orders_event.dart';
 part 'orders_state.dart';
@@ -19,6 +20,7 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
   final UpdateOrderStatusUseCase updateStatus;
   final GetOrdersMetricsUseCase getMetrics;
   final GetAssignedOrdersUseCase getAssignedOrders;
+  final SendTrackingEmailUseCase sendTrackingEmail;
 
   OrdersBloc({
     required this.getOrders,
@@ -27,6 +29,7 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     required this.updateStatus,
     required this.getMetrics,
     required this.getAssignedOrders,
+    required this.sendTrackingEmail,
   }) : super(OrdersInitial()) {
     on<LoadOrdersEvent>(_onLoadOrders);
     on<LoadOrderDetailEvent>(_onLoadOrderDetail);
@@ -34,6 +37,7 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     on<UpdateStatusEvent>(_onUpdateStatus);
     on<LoadMetricsEvent>(_onLoadMetrics);
     on<LoadAssignedOrdersEvent>(_onLoadAssignedOrders);
+    on<SendTrackingEmailEvent>(_onSendTrackingEmail);
   }
 
   Future<void> _onLoadOrders(
@@ -70,6 +74,21 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     );
   }
 
+  // 🔹 Enviar correo de rastreo con todos los datos
+  Future<void> _onSendTrackingEmail(
+    SendTrackingEmailEvent e,
+    Emitter<OrdersState> emit,
+  ) async {
+    emit(OrdersActionLoading());
+
+    final result = await sendTrackingEmail(emailData: e.emailData);
+
+    result.fold(
+      (failure) => emit(OrdersError(failure.message)),
+      (_) => emit(TrackingEmailSent('Correo de rastreo enviado correctamente')),
+    );
+  }
+
   Future<void> _onLoadAssignedOrders(
     LoadAssignedOrdersEvent e,
     Emitter<OrdersState> emit,
@@ -100,21 +119,13 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
 
     final result = await takeOrder(e.id, e.employeeId);
 
-    if (result.isLeft()) {
-      final failure = result.swap().getOrElse(() => throw Exception());
-      emit(OrdersError(failure.message));
-      return;
-    }
-
-    final detailResult = await getOrderDetail(e.id);
-
-    if (detailResult.isLeft()) {
-      final failure = detailResult.swap().getOrElse(() => throw Exception());
-      emit(OrdersError(failure.message));
-    } else {
-      final order = detailResult.getOrElse(() => throw Exception());
-      emit(OrderDetailLoaded(order));
-    }
+    result.fold((failure) => emit(OrdersError(failure.message)), (_) async {
+      final detailResult = await getOrderDetail(e.id);
+      detailResult.fold(
+        (failure) => emit(OrdersError(failure.message)),
+        (order) => emit(OrderDetailLoaded(order)),
+      );
+    });
   }
 
   Future<void> _onUpdateStatus(
@@ -131,7 +142,6 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
       },
       (_) async {
         final detailResult = await getOrderDetail(e.id);
-
         await detailResult.fold(
           (failure) async => emit(OrdersError(failure.message)),
           (order) async => emit(OrderDetailLoaded(order)),

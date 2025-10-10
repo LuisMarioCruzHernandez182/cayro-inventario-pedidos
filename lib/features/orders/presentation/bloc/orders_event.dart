@@ -35,6 +35,15 @@ class LoadAssignedOrdersEvent extends OrdersEvent {
   List<Object?> get props => [employeeId, status, search, page];
 }
 
+class SendTrackingEmailEvent extends OrdersEvent {
+  final Map<String, dynamic> emailData;
+
+  const SendTrackingEmailEvent(this.emailData);
+
+  @override
+  List<Object?> get props => [emailData];
+}
+
 class LoadOrderDetailEvent extends OrdersEvent {
   final String id;
 

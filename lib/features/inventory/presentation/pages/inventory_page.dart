@@ -306,10 +306,27 @@ class _InventoryPageState extends State<InventoryPage> {
                                           ),
                                           child: InventoryCard(
                                             product: product,
-                                            onTap: () {
-                                              context.push(
+                                            onTap: () async {
+                                              final updated = await context.push(
                                                 '/main/update-stock/${product.id}',
                                               );
+                                              if (updated == true &&
+                                                  context.mounted) {
+                                                _inventoryBloc.add(
+                                                  RefreshInventory(),
+                                                );
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Inventario actualizado correctamente',
+                                                    ),
+                                                    backgroundColor:
+                                                        AppColors.green600,
+                                                  ),
+                                                );
+                                              }
                                             },
                                           ),
                                         );
@@ -468,29 +485,8 @@ class _InventoryPageState extends State<InventoryPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // 🔹 Icono circular
-              Container(
-                padding: const EdgeInsets.all(26),
-                decoration: BoxDecoration(
-                  color: AppColors.blue50,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.blue400.withValues(alpha: 0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.inventory_2_outlined,
-                  size: 70,
-                  color: AppColors.blue600,
-                ),
-              ),
+              Container(padding: const EdgeInsets.all(26)),
               const SizedBox(height: 24),
-
-              // 🔹 Texto principal
               Text(
                 hasFilters
                     ? 'No se encontraron productos con los filtros aplicados.'
@@ -522,50 +518,22 @@ class _InventoryPageState extends State<InventoryPage> {
               ),
               const SizedBox(height: 12),
 
-              // 🔹 Subtexto
-              Text(
-                hasFilters
-                    ? 'Puedes limpiar los filtros para volver a ver todos los productos.'
-                    : 'Agrega productos o verifica la conexión al servidor.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: AppColors.gray600,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 32),
-
               // 🔹 Botón “Limpiar filtros”
               if (hasFilters)
                 ElevatedButton.icon(
                   onPressed: _onClearFilters,
-                  icon: const Icon(
-                    Icons.filter_alt_off_rounded,
-                    color: Colors.white,
-                    size: 22,
-                  ),
-                  label: const Text(
-                    'Limpiar filtros',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
+                  icon: const Icon(Icons.filter_alt_off, size: 18),
+                  label: const Text('Limpiar filtros'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.blue600,
-                    elevation: 8,
-                    shadowColor: AppColors.blue400.withValues(alpha: 0.4),
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 30,
-                      vertical: 16,
+                      horizontal: 24,
+                      vertical: 12,
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    foregroundColor: Colors.white,
                   ),
                 ),
             ],

@@ -18,6 +18,8 @@ class UpdateStockPage extends StatefulWidget {
 }
 
 class _UpdateStockPageState extends State<UpdateStockPage> {
+  final ValueNotifier<bool> isUpdating = ValueNotifier(false);
+
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
@@ -30,240 +32,191 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
         ),
       child: Scaffold(
         resizeToAvoidBottomInset: false,
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [AppColors.blue600, AppColors.blue500, AppColors.blue400],
-            ),
-          ),
-          child: SafeArea(
-            child: Column(
-              children: [
-                // 🔹 Encabezado
-                Expanded(
-                  flex: isSmallScreen ? 1 : 1,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: screenSize.width * 0.06,
+        body: Stack(
+          children: [
+            BlocListener<InventoryBloc, InventoryState>(
+              listener: (context, state) {
+                // 🔹 Control del loader igual que en OrderDetailPage
+                if (state is InventoryLoading) {
+                  isUpdating.value = true;
+                } else if (state is VariantStockUpdated ||
+                    state is ProductDetailWithVariantsLoaded ||
+                    state is InventoryError) {
+                  isUpdating.value = false;
+                }
+
+                if (state is VariantStockUpdated) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(state.message),
+                      backgroundColor: AppColors.green600,
                     ),
-                    child: Row(
-                      children: [
-                        // Back button
-                        Container(
-                          width: isSmallScreen
-                              ? screenSize.width * 0.12
-                              : screenSize.width * 0.14,
-                          height: isSmallScreen
-                              ? screenSize.width * 0.12
-                              : screenSize.width * 0.14,
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                          ),
-                          child: IconButton(
-                            onPressed: () => context.pop(),
-                            icon: Icon(
-                              Icons.arrow_back,
+                  );
+                  // 🔁 Recargar variantes actualizadas
+                  context.read<InventoryBloc>().add(
+                    LoadProductDetailWithVariants(
+                      productId: int.parse(widget.productId),
+                    ),
+                  );
+                } else if (state is InventoryError) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(state.message),
+                      backgroundColor: AppColors.red600,
+                    ),
+                  );
+                }
+              },
+              child: BlocBuilder<InventoryBloc, InventoryState>(
+                builder: (context, state) {
+                  if (state is InventoryLoading || isUpdating.value) {
+                    return const Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(color: AppColors.blue600),
+                          SizedBox(height: 16),
+                          Text(
+                            "Cargando producto...",
+                            style: TextStyle(
                               color: AppColors.blue600,
-                              size: isSmallScreen
-                                  ? screenSize.width * 0.06
-                                  : screenSize.width * 0.065,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                        ),
+                        ],
+                      ),
+                    );
+                  }
 
-                        SizedBox(width: screenSize.width * 0.02),
-
-                        // Title and subtitle
-                        Expanded(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text(
-                                  'Actualizar Stock',
-                                  style: TextStyle(
-                                    fontSize: isSmallScreen
-                                        ? screenSize.width * 0.065
-                                        : screenSize.width * 0.075,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                              SizedBox(height: screenSize.height * 0.008),
-                              Text(
-                                'Gestión de inventario por variante',
-                                style: TextStyle(
-                                  fontSize: isSmallScreen
-                                      ? screenSize.width * 0.035
-                                      : screenSize.width * 0.04,
-                                  color: Colors.white70,
-                                  fontWeight: FontWeight.w300,
-                                ),
-                                textAlign: TextAlign.center,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
+                  // 🔹 Error
+                  if (state is InventoryError) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Text(
+                          state.message,
+                          style: const TextStyle(
+                            color: AppColors.red500,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
                           ),
+                          textAlign: TextAlign.center,
                         ),
+                      ),
+                    );
+                  }
 
-                        // Spacer to balance the back button
-                        SizedBox(
-                          width: isSmallScreen
-                              ? screenSize.width * 0.12
-                              : screenSize.width * 0.14,
+                  // 🔹 Contenido cargado
+                  if (state is ProductDetailWithVariantsLoaded) {
+                    return Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            AppColors.blue600,
+                            AppColors.blue500,
+                            AppColors.blue400,
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // 🔹 Contenido
-                // Content section
-                Expanded(
-                  flex: isSmallScreen ? 7 : 6,
-                  child: Container(
-                    width: double.infinity,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(32),
-                        topRight: Radius.circular(32),
                       ),
-                    ),
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        screenSize.width * 0.06,
-                        screenSize.height * 0.02,
-                        screenSize.width * 0.06,
-                        screenSize.height * 0.02,
-                      ),
-                      child: BlocListener<InventoryBloc, InventoryState>(
-                        listener: (context, state) {
-                          if (state is VariantStockUpdated) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(state.message),
-                                backgroundColor: AppColors.green600,
-                              ),
-                            );
-                            // 🔁 Recargar variantes actualizadas
-                            context.read<InventoryBloc>().add(
-                              LoadProductDetailWithVariants(
-                                productId: int.parse(widget.productId),
-                              ),
-                            );
-                          } else if (state is InventoryError) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(state.message),
-                                backgroundColor: AppColors.red600,
-                              ),
-                            );
-                          }
-                        },
-                        child: BlocBuilder<InventoryBloc, InventoryState>(
-                          builder: (context, state) {
-                            if (state is InventoryLoading) {
-                              return const Center(
-                                child: CircularProgressIndicator(),
-                              );
-                            }
-
-                            // ✅ Nuevo estado combinado
-                            if (state is ProductDetailWithVariantsLoaded) {
-                              return _buildProductContent(
-                                context,
-                                state.product,
-                                [],
-                                screenSize,
-                                isSmallScreen,
-                              );
-                            }
-
-                            if (state is ProductVariantsLoaded) {
-                              return _buildVariantsContent(
-                                context,
-                                state.variants,
-                                screenSize,
-                                isSmallScreen,
-                              );
-                            }
-
-                            if (state is InventoryError) {
-                              return Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.error_outline,
-                                      size: 64,
-                                      color: AppColors.red500,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      'Error cargando producto',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: AppColors.red600,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      state.message,
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        color: AppColors.gray600,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        context.read<InventoryBloc>().add(
-                                          LoadProductDetailWithVariants(
-                                            productId: int.parse(
-                                              widget.productId,
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                      child: const Text('Reintentar'),
-                                    ),
-                                  ],
+                      child: SafeArea(
+                        child: Column(
+                          children: [
+                            _buildHeader(context),
+                            Expanded(
+                              flex: 6,
+                              child: Container(
+                                width: double.infinity,
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(32),
+                                    topRight: Radius.circular(32),
+                                  ),
                                 ),
-                              return _buildErrorState(
-                                state,
-                                context,
-                                screenSize,
-                              );
-                            }
-
-                            return const Center(
-                              child: CircularProgressIndicator(),
-                            );
-                          },
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    24,
+                                    20,
+                                    24,
+                                    16,
+                                  ),
+                                  child: _buildProductContent(
+                                    context,
+                                    state.product,
+                                    state.variants,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                  ),
-                ),
-              ],
+                    );
+                  }
+
+                  return const SizedBox.shrink();
+                },
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 
-  // 🔹 Sección del contenido del producto y variantes
+  Widget _buildHeader(BuildContext context) {
+    return Expanded(
+      flex: 1,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        child: Row(
+          children: [
+            Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                onPressed: () => context.pop(true),
+                icon: const Icon(Icons.arrow_back, color: AppColors.blue600),
+              ),
+            ),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Text(
+                    'Actualizar Stock',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Gestión de inventario por variante',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.white70,
+                      fontWeight: FontWeight.w300,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 48),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildProductContent(BuildContext context, product, List variants) {
   Widget _buildProductContent(
     BuildContext context,
@@ -277,8 +230,7 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 🔹 Encabezado del producto
-          // Product header
+          // 🔹 Encabezado producto
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -308,12 +260,7 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
               ),
             ],
           ),
-
           const SizedBox(height: 8),
-
-          SizedBox(height: screenSize.height * 0.008),
-
-          // Product details
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -341,7 +288,6 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
               ),
             ],
           ),
-
           const SizedBox(height: 4),
           SizedBox(height: screenSize.height * 0.004),
 
@@ -357,11 +303,9 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
           ),
+          const SizedBox(height: 24),
 
-          SizedBox(height: screenSize.height * 0.024),
-
-          // 🔹 Estadísticas del producto
-          // Stats cards
+          // 🔹 Estadísticas
           Container(
             padding: EdgeInsets.all(screenSize.width * 0.04),
             decoration: BoxDecoration(
@@ -409,11 +353,8 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
               ],
             ),
           ),
-
-          SizedBox(height: screenSize.height * 0.032),
-
-          // Variants title
-          Text(
+          const SizedBox(height: 32),
+          const Text(
             'Variantes del Producto',
             style: TextStyle(
               fontSize: isSmallScreen
@@ -424,9 +365,8 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
             ),
           ),
           const SizedBox(height: 16),
-
           Column(
-            children: (variants)
+            children: variants
                 .map<Widget>((variant) => _buildVariantCard(context, variant))
                 .toList(),
           ),
@@ -535,7 +475,6 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
   }
 
   Widget _buildVariantCard(BuildContext context, variant) {
-    // ✅ Detectar si la variante tiene imágenes
     final String? imageUrl =
         (variant.images != null && variant.images.isNotEmpty)
         ? variant.images.first.url
@@ -566,7 +505,6 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
           // Variant header
           Row(
             children: [
-              // 🔹 Imagen de la variante (o ícono si no hay imagen)
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: imageUrl != null
@@ -599,9 +537,6 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
                       ),
               ),
               const SizedBox(width: 12),
-
-              // 🔹 Indicador de color de la variante
-              // Icon container
               Container(
                 width: isSmallScreen
                     ? screenSize.width * 0.12
@@ -643,12 +578,6 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
                 ),
               ),
               const SizedBox(width: 12),
-
-              // 🔹 Descripción breve
-
-              SizedBox(width: screenSize.width * 0.03),
-
-              // Variant info
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -691,10 +620,6 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
                   ],
                 ),
               ),
-
-              // 🔹 Precio y estado del stock
-              // 🔹 Precio y estado del stock
-              // Price and stock status
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -708,83 +633,11 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
                       color: AppColors.gray900,
                     ),
                   ),
-
-                  // 🔹 Etiqueta de estado de stock
-                  Builder(
-                    builder: (context) {
-                      String stockLabel = '';
-                      Color bgColor = AppColors.gray200;
-                      Color textColor = AppColors.gray700;
-
-                      if (variant.stock > 5) {
-                        stockLabel = 'En stock';
-                        bgColor = AppColors.green100;
-                        textColor = AppColors.green600;
-                      } else if (variant.stock > 0 && variant.stock <= 5) {
-                        stockLabel = 'Poco stock';
-                        bgColor = Colors.orange.shade100;
-                        textColor = Colors.orange.shade700;
-                      } else {
-                        stockLabel = 'Sin stock';
-                        bgColor = AppColors.red100;
-                        textColor = AppColors.red600;
-                      }
-
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: bgColor,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          stockLabel,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: textColor,
-                          ),
-                        ),
-                      );
-                    },
-                  SizedBox(height: screenSize.height * 0.004),
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: screenSize.width * 0.02,
-                      vertical: screenSize.height * 0.002,
-                    ),
-                    decoration: BoxDecoration(
-                      color: variant.stock > 0
-                          ? AppColors.green100
-                          : AppColors.red100,
-                      borderRadius: BorderRadius.circular(
-                        screenSize.width * 0.01,
-                      ),
-                    ),
-                    child: Text(
-                      variant.stock > 0 ? 'En stock' : 'Sin stock',
-                      style: TextStyle(
-                        fontSize: isSmallScreen
-                            ? screenSize.width * 0.025
-                            : screenSize.width * 0.028,
-                        fontWeight: FontWeight.w600,
-                        color: variant.stock > 0
-                            ? AppColors.green600
-                            : AppColors.red600,
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ],
           ),
-
-          SizedBox(height: screenSize.height * 0.016),
-
-          // 🔹 Stock, reservado y disponible
-          // Stock stats
+          const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
@@ -864,11 +717,7 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
               ),
             ],
           ),
-
-          SizedBox(height: screenSize.height * 0.016),
-
-          // 🔹 Botón de actualizar stock
-          // Update button
+          const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -962,7 +811,6 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
   }
 
   void _showStockAdjustmentModal(BuildContext context, variant) {
-    // Guarda el bloc actual antes de abrir el modal
     final inventoryBloc = context.read<InventoryBloc>();
 
     showModalBottomSheet(
@@ -972,13 +820,11 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (sheetContext) {
-        // Inyectamos el mismo bloc dentro del bottomsheet
         return BlocProvider.value(
           value: inventoryBloc,
           child: UpdateStockModal(
             variant: variant,
             onUpdate: (adjustmentType, quantity, reason) {
-              // 🚀 Llamamos directamente al bloc, sin usar context.read()
               inventoryBloc.add(
                 UpdateVariantStock(
                   variantId: variant.id,
