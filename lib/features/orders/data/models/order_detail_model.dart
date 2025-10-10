@@ -75,10 +75,13 @@ class OrderDetailModel {
       );
     }
 
+    final user = map['user'] as Map<String, dynamic>?;
+
     return OrderDetailEntity(
       id: (map['id'] ?? '').toString(),
       status: (map['status'] ?? '').toString(),
-      userName: fullName(map['user'] as Map<String, dynamic>?),
+      userName: fullName(user),
+      customerEmail: (user?['email'] ?? '').toString(),
       employeeName: (() {
         final emp = map['employee'] as Map<String, dynamic>?;
         final name = fullName(emp);
@@ -89,10 +92,7 @@ class OrderDetailModel {
       shippingCost: toDouble(map['shippingCost']),
       totalAmount: toDouble(map['totalAmount']),
       items: items,
-      isTaken:
-          map['isTaken'] == true ||
-          map['employee'] !=
-              null, 
+      isTaken: map['isTaken'] == true || map['employee'] != null,
     );
   }
 }

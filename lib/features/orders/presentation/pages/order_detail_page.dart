@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:stock_control_app/app/di/injection_container.dart';
 import 'package:stock_control_app/features/auth/presentation/bloc/auth_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -23,12 +24,28 @@ class OrderDetailPage extends StatelessWidget {
           children: [
             BlocListener<OrdersBloc, OrdersState>(
               listener: (context, state) {
-                // 🔹 Control del loader
+                // Control del loader
                 if (state is OrdersActionLoading) {
-                  isUpdating.value =
-                      true; // empieza acción (tomar / actualizar)
-                } else if (state is OrderDetailLoaded || state is OrdersError) {
-                  isUpdating.value = false; // termina o hay error
+                  isUpdating.value = true;
+                } else if (state is OrderDetailLoaded ||
+                    state is OrdersError ||
+                    state is TrackingEmailSent) {
+                  isUpdating.value = false;
+                }
+
+                // Mensaje al enviar correo - FIXED: Proper context usage
+                if (state is TrackingEmailSent) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(state.message),
+                        backgroundColor: AppColors.green600,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  });
+                  // 🔹 Recarga detalle del pedido
+                  context.read<OrdersBloc>().add(LoadOrderDetailEvent(orderId));
                 }
               },
               child: BlocBuilder<OrdersBloc, OrdersState>(
@@ -138,7 +155,6 @@ class OrderDetailPage extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: IconButton(
-                // 🔹 Al regresar, se notifica para recargar OrdersPage
                 onPressed: () => context.pop(true),
                 icon: const Icon(Icons.arrow_back, color: AppColors.blue600),
               ),
@@ -186,17 +202,11 @@ class OrderDetailPage extends StatelessWidget {
       children: [
         _buildSummary(order),
         const SizedBox(height: 20),
-        _buildAssignment(
-          order.employeeName,
-          order.isTaken,
-          context,
-          order.id,
-          isUpdating,
-        ),
+        _buildAssignment(order.employeeName, order.isTaken, context, order.id),
         const SizedBox(height: 20),
         _buildProgress(order.status),
         const SizedBox(height: 20),
-        _buildStatusDropdown(context, order, isUpdating),
+        _buildStatusDropdown(context, order),
         const SizedBox(height: 20),
         _buildProducts(
           order.items,
@@ -213,7 +223,6 @@ class OrderDetailPage extends StatelessWidget {
     bool isTaken,
     BuildContext context,
     String orderId,
-    ValueNotifier<bool> isUpdating,
   ) {
     final assigned = (employeeName ?? '').isNotEmpty;
 
@@ -248,7 +257,6 @@ class OrderDetailPage extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
-
           if (!isTaken)
             ElevatedButton.icon(
               onPressed: () async {
@@ -261,12 +269,16 @@ class OrderDetailPage extends StatelessWidget {
                   TakeOrderEvent(orderId, employeeId),
                 );
 
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Pedido tomado correctamente'),
-                    backgroundColor: AppColors.green600,
-                  ),
-                );
+                // FIXED: Use WidgetsBinding to ensure proper context
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Pedido tomado correctamente'),
+                      backgroundColor: AppColors.green600,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                });
               },
               icon: const Icon(Icons.assignment_turned_in),
               label: const Text('Tomar pedido'),
@@ -287,11 +299,7 @@ class OrderDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusDropdown(
-    BuildContext context,
-    OrderDetailEntity order,
-    ValueNotifier<bool> isUpdating,
-  ) {
+  Widget _buildStatusDropdown(BuildContext context, OrderDetailEntity order) {
     final allStatuses = [
       'PENDING',
       'PROCESSING',
@@ -310,7 +318,20 @@ class OrderDetailPage extends StatelessWidget {
       'CANCELLED': 'Cancelado',
     };
 
+    final shippingCompanies = [
+      'DHL',
+      'FedEx',
+      'UPS',
+      'Estafeta',
+      'Paquetexpress',
+      'Redpack',
+      'Correos de México',
+    ];
+
     String selectedStatus = order.status;
+    String? trackingNumber;
+    String? shippingCompany;
+    final dateFormatter = DateFormat('dd/MM/yyyy', 'es_MX');
 
     return StatefulBuilder(
       builder: (context, setState) {
@@ -330,43 +351,162 @@ class OrderDetailPage extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: selectedStatus,
+                initialValue: selectedStatus,
                 isExpanded: true,
-                items: allStatuses.map((s) {
-                  return DropdownMenuItem(
-                    value: s,
-                    child: Text(labels[s] ?? s),
-                  );
-                }).toList(),
+                items: allStatuses
+                    .map(
+                      (s) => DropdownMenuItem(
+                        value: s,
+                        child: Text(labels[s] ?? s),
+                      ),
+                    )
+                    .toList(),
                 onChanged: (value) async {
-                  if (value != null && value != order.status) {
-                    setState(() => selectedStatus = value);
+                  if (value == null || value == order.status) return;
+                  setState(() => selectedStatus = value);
+
+                  if (value == 'SHIPPED') {
+                    await showDialog(
+                      context: context,
+                      builder: (ctx) {
+                        return AlertDialog(
+                          title: const Text('Información de envío'),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              TextField(
+                                decoration: const InputDecoration(
+                                  labelText: 'Número de rastreo',
+                                ),
+                                onChanged: (v) => trackingNumber = v,
+                              ),
+                              const SizedBox(height: 12),
+                              DropdownButtonFormField<String>(
+                                decoration: const InputDecoration(
+                                  labelText: 'Empresa de envío',
+                                ),
+                                items: shippingCompanies
+                                    .map(
+                                      (e) => DropdownMenuItem(
+                                        value: e,
+                                        child: Text(e),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: (v) => shippingCompany = v,
+                              ),
+                            ],
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              child: const Text('Cancelar'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                if ((trackingNumber ?? '').isEmpty ||
+                                    (shippingCompany ?? '').isEmpty) {
+                                  // FIXED: Proper snackbar context
+                                  ScaffoldMessenger.of(ctx).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Por favor ingrese número de rastreo y seleccione la empresa.',
+                                      ),
+                                      backgroundColor: AppColors.red500,
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                final bloc = context.read<OrdersBloc>();
+                                bloc.add(UpdateStatusEvent(order.id, value));
+
+                                // Formato moneda
+                                String formatCurrency(double v) =>
+                                    '\$${v.toStringAsFixed(2)} MXN';
+
+                                final productsData = order.items.map((item) {
+                                  return {
+                                    'name': item.productName,
+                                    'color': item.color,
+                                    'size': item.size,
+                                    'quantity': item.quantity,
+                                    'unitPrice': item.unitPrice,
+                                    'totalPrice': item.total,
+                                    'unitPriceFormatted': formatCurrency(
+                                      item.unitPrice,
+                                    ),
+                                    'totalPriceFormatted': formatCurrency(
+                                      item.total,
+                                    ),
+                                  };
+                                }).toList();
+
+                                final emailData = {
+                                  'orderId': int.parse(order.id),
+                                  'saleReference':
+                                      order.saleReference ?? order.id,
+                                  'customerEmail': order.customerEmail ?? '',
+                                  'customerName': order.userName,
+                                  'customerPhone':
+                                      order.customerPhone ?? 'No proporcionado',
+                                  'trackingNumber': trackingNumber!,
+                                  'shippingCompany': shippingCompany!,
+                                  'subtotalAmount': order.subtotalAmount,
+                                  'shippingCost': order.shippingCost,
+                                  'totalAmount': order.totalAmount,
+                                  'subtotalFormatted': formatCurrency(
+                                    order.subtotalAmount,
+                                  ),
+                                  'shippingCostFormatted': formatCurrency(
+                                    order.shippingCost,
+                                  ),
+                                  'totalAmountFormatted': formatCurrency(
+                                    order.totalAmount,
+                                  ),
+                                  'products': productsData,
+                                  'totalItems': order.items.fold<int>(
+                                    0,
+                                    (sum, item) => sum + item.quantity,
+                                  ),
+                                  'totalProducts': order.items.length,
+                                  'orderDate': order.createdAt != null
+                                      ? dateFormatter.format(order.createdAt!)
+                                      : dateFormatter.format(DateTime.now()),
+                                  'shippedDate': dateFormatter.format(
+                                    DateTime.now(),
+                                  ),
+                                };
+
+                                bloc.add(SendTrackingEmailEvent(emailData));
+                                Navigator.pop(ctx);
+                              },
+                              child: const Text('Confirmar'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  } else {
                     context.read<OrdersBloc>().add(
                       UpdateStatusEvent(order.id, value),
                     );
+                  }
 
+                  // FIXED: Proper snackbar context
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
                           'Estado cambiado a ${labels[value] ?? value}',
                         ),
                         backgroundColor: AppColors.green600,
+                        behavior: SnackBarBehavior.floating,
                       ),
                     );
-                  }
+                  });
                 },
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: AppColors.gray50,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
-                  ),
-                ),
               ),
             ],
           ),
@@ -374,6 +514,8 @@ class OrderDetailPage extends StatelessWidget {
       },
     );
   }
+
+  // ... (rest of your methods remain the same - _buildProgress, _buildSummary, _buildProducts, etc.)
 
   Widget _buildProgress(String status) {
     final statuses = ['PROCESSING', 'PACKED', 'SHIPPED', 'DELIVERED'];

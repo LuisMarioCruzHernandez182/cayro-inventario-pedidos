@@ -15,6 +15,11 @@ class OrdersActionLoading extends OrdersState {}
 
 class OrdersMetricsLoading extends OrdersState {}
 
+class TrackingEmailSent extends OrdersState {
+  final String message;
+  const TrackingEmailSent(this.message);
+}
+
 class OrdersLoaded extends OrdersState {
   final List<OrderEntity> orders;
   final int totalPages;
