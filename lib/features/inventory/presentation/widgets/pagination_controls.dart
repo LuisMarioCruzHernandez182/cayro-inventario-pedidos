@@ -36,6 +36,7 @@ class PaginationControls extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          // Botón anterior
           _buildIconButton(
             icon: Icons.chevron_left_rounded,
             isEnabled: currentPage > 1 && !isLoading,
@@ -56,6 +57,7 @@ class PaginationControls extends StatelessWidget {
 
           SizedBox(width: scaleW(20)),
 
+          // Botón siguiente
           _buildIconButton(
             icon: Icons.chevron_right_rounded,
             isEnabled: currentPage < totalPages && !isLoading,
@@ -67,12 +69,27 @@ class PaginationControls extends StatelessWidget {
     );
   }
 
+  String _buildPageText(bool isVerySmallScreen) {
+    if (isVerySmallScreen) {
+      return '$currentPage / $totalPages';
+    }
+    return 'Página $currentPage de $totalPages';
+  }
+
   Widget _buildIconButton({
     required IconData icon,
     required bool isEnabled,
     required VoidCallback onTap,
     required double Function(double) scaleW,
   }) {
+    final buttonSize = isSmallScreen
+        ? screenSize.width * 0.1
+        : screenSize.width * 0.11;
+
+    final iconSize = isSmallScreen
+        ? screenSize.width * 0.05
+        : screenSize.width * 0.055;
+
     return Container(
       width: scaleW(42),
       height: scaleW(42),

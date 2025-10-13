@@ -21,6 +21,7 @@ class CompactInventoryStats extends StatelessWidget {
 
     return Column(
       children: [
+        // Primera fila: Tarjetas grandes
         Row(
           children: [
             Expanded(
@@ -162,6 +163,8 @@ class CompactInventoryStats extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                     color: color,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -183,6 +186,8 @@ class CompactInventoryStats extends StatelessWidget {
               color: color.withValues(alpha: 0.7),
               fontWeight: FontWeight.w500,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -205,7 +210,9 @@ class CompactInventoryStats extends StatelessWidget {
         border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          // Icono circular
           Container(
             padding: EdgeInsets.all(scaleW(8)),
             decoration: BoxDecoration(
@@ -232,6 +239,8 @@ class CompactInventoryStats extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
             textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

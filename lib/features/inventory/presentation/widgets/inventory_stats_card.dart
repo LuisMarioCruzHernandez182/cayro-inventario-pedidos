@@ -118,6 +118,7 @@ class InventoryStatsCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
                         Icons.attach_money_rounded,
@@ -146,6 +147,9 @@ class InventoryStatsCard extends StatelessWidget {
                       color: AppColors.green700,
                     ),
                   ),
+
+                  SizedBox(height: screenSize.height * 0.004),
+
                   Text(
                     '${stats.totalStock} unidades totales',
                     style: TextStyle(
@@ -177,6 +181,7 @@ class InventoryStatsCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(scaleW(12)),
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon, color: color, size: scaleW(28)),
           SizedBox(height: scaleW(8)),
@@ -197,9 +202,20 @@ class InventoryStatsCard extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
             textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
     );
+  }
+
+  String _formatCurrency(double value) {
+    if (value >= 1000000) {
+      return '${(value / 1000000).toStringAsFixed(1)}M';
+    } else if (value >= 1000) {
+      return '${(value / 1000).toStringAsFixed(1)}K';
+    }
+    return value.toStringAsFixed(2);
   }
 }

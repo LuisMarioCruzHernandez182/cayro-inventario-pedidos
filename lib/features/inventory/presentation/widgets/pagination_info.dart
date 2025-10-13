@@ -45,6 +45,7 @@ class PaginationInfo extends StatelessWidget {
       ),
       child: Row(
         children: [
+          // Información de productos
           Expanded(
             child: _buildCompactItem(
               icon: Icons.inventory_2_outlined,
@@ -54,6 +55,7 @@ class PaginationInfo extends StatelessWidget {
             ),
           ),
 
+          // Separador vertical
           Container(
             width: 1,
             height: scaleH(32),
@@ -61,6 +63,7 @@ class PaginationInfo extends StatelessWidget {
             color: AppColors.blue100.withValues(alpha: 0.4),
           ),
 
+          // Información de página
           Expanded(
             child: _buildCompactItem(
               icon: Icons.layers_outlined,
@@ -84,6 +87,7 @@ class PaginationInfo extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Fila superior: Icono y título
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -113,6 +117,8 @@ class PaginationInfo extends StatelessWidget {
               color: AppColors.blue600,
               fontWeight: FontWeight.w700,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],

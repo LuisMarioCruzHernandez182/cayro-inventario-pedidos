@@ -364,6 +364,29 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
                 )
                 .toList(),
           ),
+
+          SizedBox(height: screenSize.height * 0.016),
+
+          // Variants list
+          BlocBuilder<InventoryBloc, InventoryState>(
+            builder: (context, state) {
+              if (state is ProductVariantsLoaded) {
+                return Column(
+                  children: state.variants
+                      .map(
+                        (variant) => _buildVariantCard(
+                          context,
+                          variant,
+                          screenSize,
+                          isSmallScreen,
+                        ),
+                      )
+                      .toList(),
+                );
+              }
+              return const Center(child: CircularProgressIndicator());
+            },
+          ),
         ],
       ),
     );
@@ -395,6 +418,8 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
             fontWeight: FontWeight.w500,
           ),
           textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );
@@ -411,6 +436,12 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
         ? variant.images.first.url
         : null;
 
+  Widget _buildVariantCard(
+    BuildContext context,
+    variant,
+    Size screenSize,
+    bool isSmallScreen,
+  ) {
     return Container(
       margin: EdgeInsets.only(bottom: scaleH(16)),
       padding: EdgeInsets.all(scaleW(16)),
@@ -427,6 +458,7 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
       ),
       child: Column(
         children: [
+          // Variant header
           Row(
             children: [
               ClipRRect(

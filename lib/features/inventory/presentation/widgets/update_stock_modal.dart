@@ -67,6 +67,7 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Header con título y botón cerrar
               Row(
                 children: [
                   Expanded(
@@ -91,6 +92,7 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
               ),
               SizedBox(height: scaleH(16)),
 
+              // Información del producto
               Container(
                 padding: EdgeInsets.all(scaleW(16)),
                 decoration: BoxDecoration(
@@ -108,6 +110,8 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                         fontWeight: FontWeight.w600,
                         color: AppColors.gray900,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     SizedBox(height: scaleH(6)),
                     Text(
@@ -129,11 +133,13 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
               ),
               SizedBox(height: scaleH(24)),
 
+              // Formulario
               Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Tipo de ajuste
                     Text(
                       'Tipo de ajuste',
                       style: TextStyle(
@@ -184,6 +190,7 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
 
                     SizedBox(height: scaleH(20)),
 
+                    // Campo de cantidad
                     Text(
                       'Cantidad',
                       style: TextStyle(
@@ -224,6 +231,17 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                           horizontal: scaleW(14),
                           vertical: scaleH(14),
                         ),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: screenSize.width * 0.04,
+                          vertical: isSmallScreen
+                              ? screenSize.height * 0.014
+                              : screenSize.height * 0.016,
+                        ),
+                      ),
+                      style: TextStyle(
+                        fontSize: isSmallScreen
+                            ? screenSize.width * 0.04
+                            : screenSize.width * 0.042,
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -243,6 +261,7 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
 
                     SizedBox(height: scaleH(24)),
 
+                    // Botón de acción
                     PrimaryButton(
                       text: _adjustmentType == 'ADD'
                           ? 'Agregar Stock'
@@ -251,6 +270,73 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                       backgroundColor: AppColors.blue600,
                     ),
                   ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAdjustmentButton({
+    required String value,
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required Size screenSize,
+  }) {
+    final isSmallScreen = screenSize.width < 360;
+
+    return Material(
+      color: isSelected
+          ? (value == 'ADD' ? AppColors.green500 : AppColors.red500)
+          : Colors.transparent,
+      borderRadius: BorderRadius.circular(screenSize.width * 0.02),
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _adjustmentType = value;
+          });
+        },
+        borderRadius: BorderRadius.circular(screenSize.width * 0.02),
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: screenSize.width * 0.02,
+            vertical: screenSize.height * 0.012,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(screenSize.width * 0.02),
+            border: Border.all(
+              color: isSelected
+                  ? (value == 'ADD' ? AppColors.green500 : AppColors.red500)
+                  : AppColors.gray300,
+              width: 1.5,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                color: isSelected ? Colors.white : AppColors.gray600,
+                size: isSmallScreen
+                    ? screenSize.width * 0.045
+                    : screenSize.width * 0.05,
+              ),
+              SizedBox(width: screenSize.width * 0.01),
+              Flexible(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: isSmallScreen
+                        ? screenSize.width * 0.035
+                        : screenSize.width * 0.038,
+                    fontWeight: FontWeight.w500,
+                    color: isSelected ? Colors.white : AppColors.gray700,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],

@@ -76,6 +76,7 @@ class _SearchBarWithButtonState extends State<SearchBarWithButton> {
       ),
       child: Row(
         children: [
+          // Campo de búsqueda
           Expanded(
             child: TextField(
               controller: widget.controller,
@@ -114,6 +115,13 @@ class _SearchBarWithButtonState extends State<SearchBarWithButton> {
                   horizontal: scaleW(8),
                   vertical: scaleH(12),
                 ),
+                isDense: true,
+              ),
+              style: TextStyle(
+                fontSize: isSmallScreen
+                    ? screenSize.width * 0.038
+                    : screenSize.width * 0.04,
+                color: AppColors.gray900,
               ),
             ),
           ),

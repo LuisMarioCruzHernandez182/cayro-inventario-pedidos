@@ -81,8 +81,56 @@ class _ProfilePageState extends State<ProfilePage> {
                 'Cargando perfil...',
                 style: TextStyle(color: Colors.white, fontSize: scaleW(16)),
               ),
-            ],
-          ),
+            ),
+
+            // Content section (mismo diseño que InventoryPage)
+            Expanded(
+              flex: 6,
+              child: Container(
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(32),
+                    topRight: Radius.circular(32),
+                  ),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    screenSize.width * 0.06,
+                    screenSize.height * 0.03,
+                    screenSize.width * 0.06,
+                    screenSize.height * 0.02,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Loading indicator centrado (mismo estilo que InventoryPage)
+                      CircularProgressIndicator(
+                        color: AppColors.blue500,
+                        strokeWidth: 3,
+                      ),
+                      SizedBox(height: screenSize.height * 0.02),
+                      Text(
+                        'Cargando perfil...',
+                        style: TextStyle(
+                          fontSize: isSmallScreen
+                              ? screenSize.width * 0.04
+                              : screenSize.width * 0.045,
+                          color: AppColors.gray600,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+
+                      // Simulación de contenido de perfil (placeholder)
+                      SizedBox(height: screenSize.height * 0.04),
+                      _buildLoadingPlaceholder(screenSize),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -220,6 +268,7 @@ class _ProfilePageState extends State<ProfilePage> {
     double Function(double) scaleH,
   ) {
     final user = state.user;
+    final screenSize = MediaQuery.of(context).size;
 
     return Container(
       color: AppColors.blue600,

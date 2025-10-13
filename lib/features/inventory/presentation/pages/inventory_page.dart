@@ -443,6 +443,24 @@ class _InventoryPageState extends State<InventoryPage> {
                   fontSize: scaleW(18),
                   fontWeight: FontWeight.w700,
                   color: AppColors.gray800,
+        child: SizedBox(
+          height: screenSize.height * 0.6,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.inventory_2_outlined,
+                  size: screenSize.width * 0.15,
+                  color: AppColors.gray400,
+                ),
+                SizedBox(height: screenSize.height * 0.02),
+                Text(
+                  'No se encontraron productos',
+                  style: TextStyle(
+                    fontSize: screenSize.width * 0.04,
+                    color: AppColors.gray600,
+                  ),
                 ),
               ),
               SizedBox(height: scaleH(8)),

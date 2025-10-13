@@ -41,6 +41,7 @@ class InventoryCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Fila superior: Nombre, marca y estado de stock
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -65,6 +66,8 @@ class InventoryCard extends StatelessWidget {
                             fontSize: scaleW(13),
                             color: AppColors.gray600,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
@@ -141,6 +144,66 @@ class InventoryCard extends StatelessWidget {
     );
   }
 
+  Widget _buildChipsRow({
+    required Size screenSize,
+    required bool isSmallScreen,
+    required bool isVerySmallScreen,
+  }) {
+    return Wrap(
+      spacing: screenSize.width * 0.02,
+      runSpacing: screenSize.height * 0.008,
+      children: [
+        _buildInfoChip(
+          icon: Icons.inventory_2_outlined,
+          label: 'Stock: ${product.totalStock}',
+          color: AppColors.blue500,
+          screenSize: screenSize,
+          isSmallScreen: isSmallScreen,
+          isVerySmallScreen: isVerySmallScreen,
+        ),
+        _buildInfoChip(
+          icon: Icons.palette_outlined,
+          label: '${product.variantCount} variantes',
+          color: AppColors.gray500,
+          screenSize: screenSize,
+          isSmallScreen: isSmallScreen,
+          isVerySmallScreen: isVerySmallScreen,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSecondChipsRow({
+    required Size screenSize,
+    required bool isSmallScreen,
+    required bool isVerySmallScreen,
+  }) {
+    return Wrap(
+      spacing: screenSize.width * 0.02,
+      runSpacing: screenSize.height * 0.008,
+      alignment: WrapAlignment.spaceBetween,
+      children: [
+        _buildInfoChip(
+          icon: Icons.attach_money,
+          label: '\$${product.totalValue.toStringAsFixed(2)}',
+          color: AppColors.green500,
+          screenSize: screenSize,
+          isSmallScreen: isSmallScreen,
+          isVerySmallScreen: isVerySmallScreen,
+        ),
+        if (product.totalReserved > 0)
+          _buildInfoChip(
+            icon: Icons.lock_outline,
+            label: 'Res: ${product.totalReserved}',
+            color: AppColors.orange500,
+            screenSize: screenSize,
+            isSmallScreen: isSmallScreen,
+            isVerySmallScreen: isVerySmallScreen,
+          ),
+      ],
+    );
+  }
+
   Widget _buildInfoChip({
     required IconData icon,
     required String label,
@@ -165,6 +228,8 @@ class InventoryCard extends StatelessWidget {
               color: color,
               fontWeight: FontWeight.w500,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
