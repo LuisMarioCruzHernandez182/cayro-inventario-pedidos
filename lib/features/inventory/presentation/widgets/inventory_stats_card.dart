@@ -9,67 +9,67 @@ class InventoryStatsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
-    final isSmallScreen = screenSize.width < 360;
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
 
-    return Card(
-      margin: EdgeInsets.all(screenSize.width * 0.04),
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(screenSize.width * 0.04),
+    double scaleW(double v) => v * (width / 390);
+    double scaleH(double v) => v * (height / 844);
+
+    return Container(
+      margin: EdgeInsets.all(scaleW(16)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(scaleW(16)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+        border: Border.all(color: AppColors.gray200),
       ),
       child: Padding(
-        padding: EdgeInsets.all(screenSize.width * 0.05),
+        padding: EdgeInsets.all(scaleW(20)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Título
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                'Resumen del Inventario',
-                style: TextStyle(
-                  fontSize: isSmallScreen
-                      ? screenSize.width * 0.055
-                      : screenSize.width * 0.06,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.gray900,
-                ),
+            Text(
+              'Resumen del Inventario',
+              style: TextStyle(
+                fontSize: scaleW(20),
+                fontWeight: FontWeight.bold,
+                color: AppColors.gray900,
               ),
             ),
+            SizedBox(height: scaleH(16)),
 
-            SizedBox(height: screenSize.height * 0.016),
-
-            // Primera fila de estadísticas
             Row(
               children: [
                 Expanded(
                   child: _buildStatItem(
-                    icon: Icons.inventory_2,
+                    icon: Icons.inventory_2_rounded,
                     title: 'Productos',
                     value: stats.totalProducts.toString(),
-                    color: AppColors.blue500,
-                    screenSize: screenSize,
-                    isSmallScreen: isSmallScreen,
+                    color: AppColors.blue600,
+                    scaleW: scaleW,
                   ),
                 ),
-                SizedBox(width: screenSize.width * 0.03),
+                SizedBox(width: scaleW(12)),
                 Expanded(
                   child: _buildStatItem(
-                    icon: Icons.palette,
+                    icon: Icons.palette_rounded,
                     title: 'Variantes',
                     value: stats.totalVariants.toString(),
                     color: AppColors.purple500,
-                    screenSize: screenSize,
-                    isSmallScreen: isSmallScreen,
+                    scaleW: scaleW,
                   ),
                 ),
               ],
             ),
+            SizedBox(height: scaleH(16)),
 
-            SizedBox(height: screenSize.height * 0.016),
-
-            // Segunda fila de estadísticas
             Row(
               children: [
                 Expanded(
@@ -78,85 +78,73 @@ class InventoryStatsCard extends StatelessWidget {
                     title: 'En Stock',
                     value: stats.inStockCount.toString(),
                     color: AppColors.green600,
+                    scaleW: scaleW,
                   ),
                 ),
+                SizedBox(width: scaleW(8)),
                 Expanded(
                   child: _buildStatItem(
-                    icon: Icons.warning_amber,
+                    icon: Icons.warning_amber_rounded,
                     title: 'Poco Stock',
                     value: stats.lowStockCount.toString(),
-                    color: AppColors.orange500,
-                    screenSize: screenSize,
-                    isSmallScreen: isSmallScreen,
+                    color: AppColors.amber600,
+                    scaleW: scaleW,
                   ),
                 ),
-                SizedBox(width: screenSize.width * 0.03),
+                SizedBox(width: scaleW(8)),
                 Expanded(
                   child: _buildStatItem(
-                    icon: Icons.error_outline,
+                    icon: Icons.cancel_rounded,
                     title: 'Agotados',
                     value: stats.outOfStockCount.toString(),
-                    color: AppColors.red500,
-                    screenSize: screenSize,
-                    isSmallScreen: isSmallScreen,
+                    color: AppColors.red600,
+                    scaleW: scaleW,
                   ),
                 ),
               ],
             ),
 
-            const SizedBox(height: 16),
+            SizedBox(height: scaleH(20)),
+
             Container(
               width: double.infinity,
-              padding: EdgeInsets.all(screenSize.width * 0.04),
+              padding: EdgeInsets.all(scaleW(16)),
               decoration: BoxDecoration(
                 color: AppColors.green50,
-                borderRadius: BorderRadius.circular(screenSize.width * 0.03),
+                borderRadius: BorderRadius.circular(scaleW(12)),
                 border: Border.all(color: AppColors.green200),
               ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
-                        Icons.attach_money,
+                        Icons.attach_money_rounded,
                         color: AppColors.green600,
-                        size: isSmallScreen
-                            ? screenSize.width * 0.06
-                            : screenSize.width * 0.065,
+                        size: scaleW(24),
                       ),
-                      SizedBox(width: screenSize.width * 0.02),
-                      Flexible(
+                      SizedBox(width: scaleW(8)),
+                      Expanded(
                         child: Text(
                           'Valor Total del Inventario',
                           style: TextStyle(
-                            fontSize: isSmallScreen
-                                ? screenSize.width * 0.04
-                                : screenSize.width * 0.045,
+                            fontSize: scaleW(16),
                             fontWeight: FontWeight.w600,
                             color: AppColors.green800,
                           ),
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
                   ),
-
-                  SizedBox(height: screenSize.height * 0.008),
-
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      '\$${_formatCurrency(stats.totalInventoryValue)}',
-                      style: TextStyle(
-                        fontSize: isSmallScreen
-                            ? screenSize.width * 0.065
-                            : screenSize.width * 0.075,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.green700,
-                      ),
+                  SizedBox(height: scaleH(8)),
+                  Text(
+                    '\$${stats.totalInventoryValue.toStringAsFixed(2)}',
+                    style: TextStyle(
+                      fontSize: scaleW(24),
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.green700,
                     ),
                   ),
 
@@ -165,12 +153,10 @@ class InventoryStatsCard extends StatelessWidget {
                   Text(
                     '${stats.totalStock} unidades totales',
                     style: TextStyle(
-                      fontSize: isSmallScreen
-                          ? screenSize.width * 0.035
-                          : screenSize.width * 0.04,
+                      fontSize: scaleW(13),
                       color: AppColors.green600,
+                      fontWeight: FontWeight.w500,
                     ),
-                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
@@ -186,51 +172,33 @@ class InventoryStatsCard extends StatelessWidget {
     required String title,
     required String value,
     required Color color,
-    required Size screenSize,
-    required bool isSmallScreen,
+    required double Function(double) scaleW,
   }) {
     return Container(
-      padding: EdgeInsets.all(screenSize.width * 0.03),
+      padding: EdgeInsets.all(scaleW(12)),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(screenSize.width * 0.03),
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(scaleW(12)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            icon,
-            color: color,
-            size: isSmallScreen
-                ? screenSize.width * 0.07
-                : screenSize.width * 0.075,
-          ),
-
-          SizedBox(height: screenSize.height * 0.008),
-
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: isSmallScreen
-                    ? screenSize.width * 0.055
-                    : screenSize.width * 0.06,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
+          Icon(icon, color: color, size: scaleW(28)),
+          SizedBox(height: scaleW(8)),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: scaleW(20),
+              fontWeight: FontWeight.bold,
+              color: color,
             ),
           ),
-
-          SizedBox(height: screenSize.height * 0.004),
-
+          SizedBox(height: scaleW(4)),
           Text(
             title,
             style: TextStyle(
-              fontSize: isSmallScreen
-                  ? screenSize.width * 0.03
-                  : screenSize.width * 0.035,
-              color: AppColors.gray600,
+              fontSize: scaleW(12),
+              color: AppColors.gray700,
               fontWeight: FontWeight.w500,
             ),
             textAlign: TextAlign.center,

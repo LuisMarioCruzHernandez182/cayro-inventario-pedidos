@@ -17,18 +17,21 @@ class PaginationControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
+
+    double scaleW(double v) => v * (width / 390);
+    double scaleH(double v) => v * (height / 844);
+
     if (totalPages <= 1) {
       return const SizedBox.shrink();
     }
 
-    final screenSize = MediaQuery.of(context).size;
-    final isSmallScreen = screenSize.width < 360;
-    final isVerySmallScreen = screenSize.width < 320;
-
-    return Container(
+    return Padding(
       padding: EdgeInsets.symmetric(
-        vertical: screenSize.height * 0.016,
-        horizontal: screenSize.width * 0.05,
+        vertical: scaleH(16),
+        horizontal: scaleW(20),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -38,38 +41,28 @@ class PaginationControls extends StatelessWidget {
             icon: Icons.chevron_left_rounded,
             isEnabled: currentPage > 1 && !isLoading,
             onTap: () => onPageChanged(currentPage - 1),
-            screenSize: screenSize,
-            isSmallScreen: isSmallScreen,
+            scaleW: scaleW,
           ),
 
-          SizedBox(width: screenSize.width * 0.04),
+          SizedBox(width: scaleW(20)),
 
-          // Información de página
-          Flexible(
-            child: Text(
-              _buildPageText(isVerySmallScreen),
-              style: TextStyle(
-                fontSize: isSmallScreen
-                    ? screenSize.width * 0.035
-                    : screenSize.width * 0.038,
-                color: AppColors.gray700,
-                fontWeight: FontWeight.w500,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+          Text(
+            'Página $currentPage de $totalPages',
+            style: TextStyle(
+              fontSize: scaleW(14),
+              color: AppColors.gray700,
+              fontWeight: FontWeight.w600,
             ),
           ),
 
-          SizedBox(width: screenSize.width * 0.04),
+          SizedBox(width: scaleW(20)),
 
           // Botón siguiente
           _buildIconButton(
             icon: Icons.chevron_right_rounded,
             isEnabled: currentPage < totalPages && !isLoading,
             onTap: () => onPageChanged(currentPage + 1),
-            screenSize: screenSize,
-            isSmallScreen: isSmallScreen,
+            scaleW: scaleW,
           ),
         ],
       ),
@@ -87,8 +80,7 @@ class PaginationControls extends StatelessWidget {
     required IconData icon,
     required bool isEnabled,
     required VoidCallback onTap,
-    required Size screenSize,
-    required bool isSmallScreen,
+    required double Function(double) scaleW,
   }) {
     final buttonSize = isSmallScreen
         ? screenSize.width * 0.1
@@ -99,17 +91,17 @@ class PaginationControls extends StatelessWidget {
         : screenSize.width * 0.055;
 
     return Container(
-      width: buttonSize,
-      height: buttonSize,
+      width: scaleW(42),
+      height: scaleW(42),
       decoration: BoxDecoration(
-        color: isEnabled ? AppColors.blue500 : Colors.grey.shade300,
         shape: BoxShape.circle,
+        color: isEnabled ? AppColors.blue600 : AppColors.gray300,
         boxShadow: isEnabled
             ? [
                 BoxShadow(
-                  color: AppColors.blue500.withOpacity(0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
+                  color: AppColors.blue600.withValues(alpha: 0.25),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
                 ),
               ]
             : null,
@@ -118,8 +110,10 @@ class PaginationControls extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: isEnabled ? onTap : null,
-          borderRadius: BorderRadius.circular(buttonSize / 2),
-          child: Icon(icon, size: iconSize, color: Colors.white),
+          borderRadius: BorderRadius.circular(scaleW(21)),
+          splashColor: Colors.white.withValues(alpha: 0.2),
+          highlightColor: Colors.white.withValues(alpha: 0.1),
+          child: Icon(icon, size: scaleW(22), color: Colors.white),
         ),
       ),
     );

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/buttons/primary_button.dart';
 import '../../domain/entities/product_variant_entity.dart';
+
 class UpdateStockModal extends StatefulWidget {
   final ProductVariantEntity variant;
   final Function(String adjustmentType, int quantity, String? reason) onUpdate;
@@ -32,23 +33,36 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
     if (!_formKey.currentState!.validate()) return;
 
     final quantity = int.parse(_quantityController.text);
-
     widget.onUpdate(_adjustmentType, quantity, null);
     Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
-    final isSmallScreen = screenSize.width < 360;
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
+    double scaleW(double v) => v * (width / 390);
+    double scaleH(double v) => v * (height / 844);
 
     return Container(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(scaleW(20))),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, -3),
+          ),
+        ],
+      ),
       child: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.all(screenSize.width * 0.06),
+          padding: EdgeInsets.all(scaleW(24)),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -60,9 +74,7 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                     child: Text(
                       'Actualizar Stock',
                       style: TextStyle(
-                        fontSize: isSmallScreen
-                            ? screenSize.width * 0.06
-                            : screenSize.width * 0.065,
+                        fontSize: scaleW(22),
                         fontWeight: FontWeight.bold,
                         color: AppColors.gray900,
                       ),
@@ -73,21 +85,20 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                     icon: Icon(
                       Icons.close,
                       color: AppColors.gray600,
-                      size: isSmallScreen
-                          ? screenSize.width * 0.06
-                          : screenSize.width * 0.065,
+                      size: scaleW(22),
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: screenSize.height * 0.016),
+              SizedBox(height: scaleH(16)),
 
               // Información del producto
               Container(
-                padding: EdgeInsets.all(screenSize.width * 0.04),
+                padding: EdgeInsets.all(scaleW(16)),
                 decoration: BoxDecoration(
                   color: AppColors.gray50,
-                  borderRadius: BorderRadius.circular(screenSize.width * 0.03),
+                  borderRadius: BorderRadius.circular(scaleW(12)),
+                  border: Border.all(color: AppColors.gray200),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -95,38 +106,32 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                     Text(
                       'Variante: ${widget.variant.color.name} - ${widget.variant.size.name}',
                       style: TextStyle(
-                        fontSize: isSmallScreen
-                            ? screenSize.width * 0.04
-                            : screenSize.width * 0.045,
+                        fontSize: scaleW(16),
                         fontWeight: FontWeight.w600,
                         color: AppColors.gray900,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    SizedBox(height: screenSize.height * 0.004),
+                    SizedBox(height: scaleH(6)),
                     Text(
                       'Stock actual: ${widget.variant.stock}',
                       style: TextStyle(
-                        fontSize: isSmallScreen
-                            ? screenSize.width * 0.035
-                            : screenSize.width * 0.038,
+                        fontSize: scaleW(14),
                         color: AppColors.gray600,
                       ),
                     ),
                     Text(
                       'Disponible: ${widget.variant.available}',
                       style: TextStyle(
-                        fontSize: isSmallScreen
-                            ? screenSize.width * 0.035
-                            : screenSize.width * 0.038,
+                        fontSize: scaleW(14),
                         color: AppColors.gray600,
                       ),
                     ),
                   ],
                 ),
               ),
-              SizedBox(height: screenSize.height * 0.02),
+              SizedBox(height: scaleH(24)),
 
               // Formulario
               Form(
@@ -138,41 +143,29 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                     Text(
                       'Tipo de ajuste',
                       style: TextStyle(
-                        fontSize: isSmallScreen
-                            ? screenSize.width * 0.042
-                            : screenSize.width * 0.045,
+                        fontSize: scaleW(16),
                         fontWeight: FontWeight.w600,
                         color: AppColors.gray900,
                       ),
                     ),
-                    SizedBox(height: screenSize.height * 0.008),
+                    SizedBox(height: scaleH(8)),
 
-                    // Segmented Button responsivo
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        return Row(
-                          children: [
-                            Expanded(
-                              child: _buildAdjustmentButton(
-                                value: 'ADD',
-                                label: 'Agregar',
-                                icon: Icons.add,
-                                isSelected: _adjustmentType == 'ADD',
-                                screenSize: screenSize,
-                              ),
-                            ),
-                            SizedBox(width: screenSize.width * 0.02),
-                            Expanded(
-                              child: _buildAdjustmentButton(
-                                value: 'SUBTRACT',
-                                label: 'Reducir',
-                                icon: Icons.remove,
-                                isSelected: _adjustmentType == 'SUBTRACT',
-                                screenSize: screenSize,
-                              ),
-                            ),
-                          ],
-                        );
+                    SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment<String>(
+                          value: 'ADD',
+                          label: Text('Agregar'),
+                          icon: Icon(Icons.add),
+                        ),
+                        ButtonSegment<String>(
+                          value: 'SUBTRACT',
+                          label: Text('Reducir'),
+                          icon: Icon(Icons.remove),
+                        ),
+                      ],
+                      selected: {_adjustmentType},
+                      onSelectionChanged: (Set<String> newSelection) {
+                        setState(() => _adjustmentType = newSelection.first);
                       },
                       style: ButtonStyle(
                         backgroundColor:
@@ -189,36 +182,54 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                               }
                               return AppColors.gray700;
                             }),
+                        side: WidgetStateProperty.all(
+                          BorderSide(color: AppColors.gray300),
+                        ),
                       ),
                     ),
-                    SizedBox(height: screenSize.height * 0.016),
+
+                    SizedBox(height: scaleH(20)),
 
                     // Campo de cantidad
                     Text(
                       'Cantidad',
                       style: TextStyle(
-                        fontSize: isSmallScreen
-                            ? screenSize.width * 0.042
-                            : screenSize.width * 0.045,
+                        fontSize: scaleW(16),
                         fontWeight: FontWeight.w600,
                         color: AppColors.gray900,
                       ),
                     ),
-                    SizedBox(height: screenSize.height * 0.008),
+                    SizedBox(height: scaleH(8)),
+
                     TextFormField(
                       controller: _quantityController,
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       decoration: InputDecoration(
                         hintText: 'Ingrese la cantidad',
+                        hintStyle: TextStyle(
+                          color: AppColors.gray400,
+                          fontSize: scaleW(14),
+                        ),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(
-                            screenSize.width * 0.03,
+                          borderRadius: BorderRadius.circular(scaleW(12)),
+                          borderSide: BorderSide(color: AppColors.gray300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(scaleW(12)),
+                          borderSide: BorderSide(
+                            color: AppColors.blue600,
+                            width: 1.5,
                           ),
                         ),
                         prefixIcon: Icon(
                           _adjustmentType == 'ADD' ? Icons.add : Icons.remove,
                           color: AppColors.blue600,
+                          size: scaleW(22),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: scaleW(14),
+                          vertical: scaleH(14),
                         ),
                         contentPadding: EdgeInsets.symmetric(
                           horizontal: screenSize.width * 0.04,
@@ -247,7 +258,8 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 24),
+
+                    SizedBox(height: scaleH(24)),
 
                     // Botón de acción
                     PrimaryButton(

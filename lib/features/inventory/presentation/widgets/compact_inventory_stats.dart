@@ -9,12 +9,15 @@ class CompactInventoryStats extends StatelessWidget {
   final InventoryStatsEntity stats;
 
   const CompactInventoryStats({super.key, required this.stats});
-  
+
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
-    final isSmallScreen = screenSize.width < 360;
-    final isVerySmallScreen = screenSize.width < 320;
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
+
+    double scaleW(double v) => v * (width / 390);
+    double scaleH(double v) => v * (height / 844);
 
     return Column(
       children: [
@@ -26,14 +29,13 @@ class CompactInventoryStats extends StatelessWidget {
                 title: 'Total Productos',
                 value: stats.totalProducts.toString(),
                 subtitle: '${stats.totalStock} disponibles',
-                color: AppColors.blue500,
+                color: AppColors.blue600,
                 backgroundColor: AppColors.blue50,
                 icon: Icons.inventory_2,
-                screenSize: screenSize,
-                isSmallScreen: isSmallScreen,
+                scaleW: scaleW,
               ),
             ),
-            SizedBox(width: screenSize.width * 0.03),
+            SizedBox(width: scaleW(12)),
             Expanded(
               child: _buildStatCard(
                 title: 'Valor Total',
@@ -42,18 +44,14 @@ class CompactInventoryStats extends StatelessWidget {
                 color: AppColors.green600,
                 backgroundColor: AppColors.green50,
                 icon: Icons.attach_money,
-                screenSize: screenSize,
-                isSmallScreen: isSmallScreen,
+                scaleW: scaleW,
               ),
             ),
           ],
         ),
-        SizedBox(height: screenSize.height * 0.012),
-
-        // Segunda fila: Tarjetas pequeñas
+        SizedBox(height: scaleH(12)),
         Row(
           children: [
-            // 🔹 En stock
             Expanded(
               child: GestureDetector(
                 onTap: () {
@@ -68,15 +66,15 @@ class CompactInventoryStats extends StatelessWidget {
                 child: _buildSmallStatCard(
                   value: stats.inStockCount.toString(),
                   title: 'En Stock',
-                  color: AppColors.green500,
+                  color: AppColors.green600,
                   backgroundColor: AppColors.green50,
                   icon: Icons.check_circle,
+                  scaleW: scaleW,
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: scaleW(8)),
 
-            // 🔹 Poco stock
             Expanded(
               child: GestureDetector(
                 onTap: () {
@@ -91,15 +89,15 @@ class CompactInventoryStats extends StatelessWidget {
                 child: _buildSmallStatCard(
                   value: stats.lowStockCount.toString(),
                   title: 'Poco Stock',
-                  color: AppColors.orange500,
-                  backgroundColor: AppColors.orange50,
-                  icon: Icons.warning,
+                  color: AppColors.amber600,
+                  backgroundColor: AppColors.amber50,
+                  icon: Icons.warning_amber_rounded,
+                  scaleW: scaleW,
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: scaleW(8)),
 
-            // 🔹 Sin stock
             Expanded(
               child: GestureDetector(
                 onTap: () {
@@ -114,9 +112,10 @@ class CompactInventoryStats extends StatelessWidget {
                 child: _buildSmallStatCard(
                   value: stats.outOfStockCount.toString(),
                   title: 'Agotados',
-                  color: AppColors.red500,
+                  color: AppColors.red600,
                   backgroundColor: AppColors.red50,
                   icon: Icons.cancel,
+                  scaleW: scaleW,
                 ),
               ),
             ),
@@ -133,30 +132,34 @@ class CompactInventoryStats extends StatelessWidget {
     required Color color,
     required Color backgroundColor,
     required IconData icon,
-    required Size screenSize,
-    required bool isSmallScreen,
+    required double Function(double) scaleW,
   }) {
     return Container(
-      padding: EdgeInsets.all(screenSize.width * 0.04),
+      padding: EdgeInsets.all(scaleW(16)),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(screenSize.width * 0.04),
-        border: Border.all(color: color.withOpacity(0.2)),
+        borderRadius: BorderRadius.circular(scaleW(16)),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, color: color, size: screenSize.width * 0.05),
-              SizedBox(width: screenSize.width * 0.02),
+              Icon(icon, color: color, size: scaleW(20)),
+              SizedBox(width: scaleW(8)),
               Expanded(
                 child: Text(
                   title,
                   style: TextStyle(
-                    fontSize: isSmallScreen
-                        ? screenSize.width * 0.03
-                        : screenSize.width * 0.032,
+                    fontSize: scaleW(12),
                     fontWeight: FontWeight.w600,
                     color: color,
                   ),
@@ -166,28 +169,21 @@ class CompactInventoryStats extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: screenSize.height * 0.008),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: isSmallScreen
-                    ? screenSize.width * 0.06
-                    : screenSize.width * 0.065,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
+          SizedBox(height: scaleW(8)),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: scaleW(22),
+              fontWeight: FontWeight.bold,
+              color: color,
             ),
           ),
-          SizedBox(height: screenSize.height * 0.004),
+          SizedBox(height: scaleW(4)),
           Text(
             subtitle,
             style: TextStyle(
-              fontSize: isSmallScreen
-                  ? screenSize.width * 0.028
-                  : screenSize.width * 0.03,
-              color: color.withOpacity(0.7),
+              fontSize: scaleW(11),
+              color: color.withValues(alpha: 0.7),
               fontWeight: FontWeight.w500,
             ),
             maxLines: 1,
@@ -204,59 +200,41 @@ class CompactInventoryStats extends StatelessWidget {
     required Color color,
     required Color backgroundColor,
     required IconData icon,
-    required Size screenSize,
-    required bool isVerySmallScreen,
+    required double Function(double) scaleW,
   }) {
     return Container(
-      padding: EdgeInsets.all(screenSize.width * 0.03),
+      padding: EdgeInsets.all(scaleW(12)),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(screenSize.width * 0.03),
-        border: Border.all(color: color.withOpacity(0.2)),
+        borderRadius: BorderRadius.circular(scaleW(12)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // Icono circular
           Container(
-            padding: EdgeInsets.all(screenSize.width * 0.02),
+            padding: EdgeInsets.all(scaleW(8)),
             decoration: BoxDecoration(
               color: color,
-              borderRadius: BorderRadius.circular(screenSize.width * 0.05),
+              borderRadius: BorderRadius.circular(scaleW(20)),
             ),
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: isVerySmallScreen
-                  ? screenSize.width * 0.035
-                  : screenSize.width * 0.04,
+            child: Icon(icon, color: Colors.white, size: scaleW(16)),
+          ),
+          SizedBox(height: scaleW(8)),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: scaleW(18),
+              fontWeight: FontWeight.bold,
+              color: color,
             ),
           ),
-          SizedBox(height: screenSize.height * 0.008),
-
-          // Valor
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: isVerySmallScreen
-                    ? screenSize.width * 0.045
-                    : screenSize.width * 0.05,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-          ),
-          SizedBox(height: screenSize.height * 0.002),
-
-          // Título
+          SizedBox(height: scaleW(2)),
           Text(
             title,
             style: TextStyle(
-              fontSize: isVerySmallScreen
-                  ? screenSize.width * 0.025
-                  : screenSize.width * 0.028,
+              fontSize: scaleW(10),
               color: color,
               fontWeight: FontWeight.w600,
             ),
