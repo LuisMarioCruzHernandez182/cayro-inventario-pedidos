@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/buttons/primary_button.dart';
 import '../../domain/entities/product_variant_entity.dart';
+
 class UpdateStockModal extends StatefulWidget {
   final ProductVariantEntity variant;
   final Function(String adjustmentType, int quantity, String? reason) onUpdate;
@@ -32,20 +33,36 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
     if (!_formKey.currentState!.validate()) return;
 
     final quantity = int.parse(_quantityController.text);
-
     widget.onUpdate(_adjustmentType, quantity, null);
     Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
+    double scaleW(double v) => v * (width / 390);
+    double scaleH(double v) => v * (height / 844);
+
     return Container(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(scaleW(20))),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, -3),
+          ),
+        ],
+      ),
       child: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(scaleW(24)),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -56,7 +73,7 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                     child: Text(
                       'Actualizar Stock',
                       style: TextStyle(
-                        fontSize: 24,
+                        fontSize: scaleW(22),
                         fontWeight: FontWeight.bold,
                         color: AppColors.gray900,
                       ),
@@ -64,17 +81,22 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                   ),
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    icon: Icon(Icons.close, color: AppColors.gray600),
+                    icon: Icon(
+                      Icons.close,
+                      color: AppColors.gray600,
+                      size: scaleW(22),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: scaleH(16)),
 
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(scaleW(16)),
                 decoration: BoxDecoration(
                   color: AppColors.gray50,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(scaleW(12)),
+                  border: Border.all(color: AppColors.gray200),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,24 +104,30 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                     Text(
                       'Variante: ${widget.variant.color.name} - ${widget.variant.size.name}',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: scaleW(16),
                         fontWeight: FontWeight.w600,
                         color: AppColors.gray900,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: scaleH(6)),
                     Text(
                       'Stock actual: ${widget.variant.stock}',
-                      style: TextStyle(fontSize: 14, color: AppColors.gray600),
+                      style: TextStyle(
+                        fontSize: scaleW(14),
+                        color: AppColors.gray600,
+                      ),
                     ),
                     Text(
                       'Disponible: ${widget.variant.available}',
-                      style: TextStyle(fontSize: 14, color: AppColors.gray600),
+                      style: TextStyle(
+                        fontSize: scaleW(14),
+                        color: AppColors.gray600,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: scaleH(24)),
 
               Form(
                 key: _formKey,
@@ -109,12 +137,12 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                     Text(
                       'Tipo de ajuste',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: scaleW(16),
                         fontWeight: FontWeight.w600,
                         color: AppColors.gray900,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: scaleH(8)),
 
                     SegmentedButton<String>(
                       segments: const [
@@ -131,9 +159,7 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                       ],
                       selected: {_adjustmentType},
                       onSelectionChanged: (Set<String> newSelection) {
-                        setState(() {
-                          _adjustmentType = newSelection.first;
-                        });
+                        setState(() => _adjustmentType = newSelection.first);
                       },
                       style: ButtonStyle(
                         backgroundColor:
@@ -150,31 +176,53 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                               }
                               return AppColors.gray700;
                             }),
+                        side: WidgetStateProperty.all(
+                          BorderSide(color: AppColors.gray300),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 16),
+
+                    SizedBox(height: scaleH(20)),
 
                     Text(
                       'Cantidad',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: scaleW(16),
                         fontWeight: FontWeight.w600,
                         color: AppColors.gray900,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: scaleH(8)),
+
                     TextFormField(
                       controller: _quantityController,
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       decoration: InputDecoration(
                         hintText: 'Ingrese la cantidad',
+                        hintStyle: TextStyle(
+                          color: AppColors.gray400,
+                          fontSize: scaleW(14),
+                        ),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(scaleW(12)),
+                          borderSide: BorderSide(color: AppColors.gray300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(scaleW(12)),
+                          borderSide: BorderSide(
+                            color: AppColors.blue600,
+                            width: 1.5,
+                          ),
                         ),
                         prefixIcon: Icon(
                           _adjustmentType == 'ADD' ? Icons.add : Icons.remove,
                           color: AppColors.blue600,
+                          size: scaleW(22),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: scaleW(14),
+                          vertical: scaleH(14),
                         ),
                       ),
                       validator: (value) {
@@ -192,7 +240,8 @@ class _UpdateStockModalState extends State<UpdateStockModal> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 24),
+
+                    SizedBox(height: scaleH(24)),
 
                     PrimaryButton(
                       text: _adjustmentType == 'ADD'

@@ -54,11 +54,25 @@ class _SearchBarWithButtonState extends State<SearchBarWithButton> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
+
+    double scaleW(double v) => v * (width / 390);
+    double scaleH(double v) => v * (height / 844);
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.gray50,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(scaleW(12)),
         border: Border.all(color: AppColors.gray200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -66,13 +80,24 @@ class _SearchBarWithButtonState extends State<SearchBarWithButton> {
             child: TextField(
               controller: widget.controller,
               onSubmitted: _onSubmitted,
+              style: TextStyle(fontSize: scaleW(14), color: AppColors.gray900),
               decoration: InputDecoration(
                 hintText: 'Buscar productos, marcas, categorías...',
-                hintStyle: TextStyle(color: AppColors.gray500, fontSize: 14),
-                prefixIcon: Icon(
-                  Icons.search,
+                hintStyle: TextStyle(
                   color: AppColors.gray500,
-                  size: 20,
+                  fontSize: scaleW(14),
+                ),
+                prefixIcon: Padding(
+                  padding: EdgeInsets.only(left: scaleW(12), right: scaleW(8)),
+                  child: Icon(
+                    Icons.search,
+                    color: AppColors.gray500,
+                    size: scaleW(20),
+                  ),
+                ),
+                prefixIconConstraints: BoxConstraints(
+                  minWidth: scaleW(32),
+                  minHeight: scaleW(32),
                 ),
                 suffixIcon: _hasText
                     ? IconButton(
@@ -80,31 +105,53 @@ class _SearchBarWithButtonState extends State<SearchBarWithButton> {
                         icon: Icon(
                           Icons.clear,
                           color: AppColors.gray500,
-                          size: 20,
+                          size: scaleW(20),
                         ),
                       )
                     : null,
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: scaleW(8),
+                  vertical: scaleH(12),
                 ),
               ),
-              style: const TextStyle(fontSize: 14, color: AppColors.gray900),
             ),
           ),
 
           Container(
-            margin: const EdgeInsets.only(right: 4),
+            margin: EdgeInsets.only(
+              right: scaleW(4),
+              top: scaleH(4),
+              bottom: scaleH(4),
+            ),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(scaleW(8)),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.blue600.withValues(alpha: 0.25),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
             child: Material(
-              color: AppColors.blue500,
-              borderRadius: BorderRadius.circular(8),
+              color: AppColors.blue600,
+              borderRadius: BorderRadius.circular(scaleW(8)),
               child: InkWell(
                 onTap: widget.onSearch,
-                borderRadius: BorderRadius.circular(8),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Icon(Icons.search, color: Colors.white, size: 20),
+                borderRadius: BorderRadius.circular(scaleW(8)),
+                splashColor: Colors.white.withValues(alpha: 0.2),
+                highlightColor: Colors.white.withValues(alpha: 0.1),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: scaleW(16),
+                    vertical: scaleH(12),
+                  ),
+                  child: Icon(
+                    Icons.search,
+                    color: Colors.white,
+                    size: scaleW(20),
+                  ),
                 ),
               ),
             ),

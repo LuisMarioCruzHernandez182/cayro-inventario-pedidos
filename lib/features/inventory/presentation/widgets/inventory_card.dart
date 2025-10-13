@@ -12,22 +12,37 @@ class InventoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final stockStatus = _getStockStatus(product.totalAvailable);
 
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
+
+    double scaleW(double v) => v * (width / 390);
+    double scaleH(double v) => v * (height / 844);
+
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: EdgeInsets.symmetric(horizontal: scaleW(16), vertical: scaleH(8)),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(scaleW(16)),
         border: Border.all(color: AppColors.gray200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(scaleW(16)),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(scaleW(16)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: Column(
@@ -35,76 +50,87 @@ class InventoryCard extends StatelessWidget {
                       children: [
                         Text(
                           product.name,
-                          style: const TextStyle(
-                            fontSize: 16,
+                          style: TextStyle(
+                            fontSize: scaleW(16),
                             fontWeight: FontWeight.bold,
                             color: AppColors.gray900,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: scaleH(4)),
                         Text(
                           '${product.brand.name} • ${product.category.name}',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: scaleW(13),
                             color: AppColors.gray600,
                           ),
                         ),
                       ],
                     ),
                   ),
+
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: scaleW(10),
+                      vertical: scaleH(6),
                     ),
                     decoration: BoxDecoration(
                       color: stockStatus.backgroundColor,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.shadowColor),
+                      borderRadius: BorderRadius.circular(scaleW(8)),
+                      border: Border.all(
+                        color: stockStatus.color.withValues(alpha: 0.25),
+                      ),
                     ),
                     child: Text(
                       stockStatus.text,
                       style: TextStyle(
                         color: stockStatus.color,
-                        fontSize: 12,
+                        fontSize: scaleW(12),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+
+              SizedBox(height: scaleH(12)),
+
               Row(
                 children: [
                   _buildInfoChip(
                     icon: Icons.inventory_2_outlined,
                     label: 'Stock: ${product.totalStock}',
-                    color: AppColors.blue500,
+                    color: AppColors.blue600,
+                    scaleW: scaleW,
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: scaleW(8)),
                   _buildInfoChip(
                     icon: Icons.palette_outlined,
                     label: '${product.variantCount} variantes',
-                    color: AppColors.gray500,
+                    color: AppColors.gray600,
+                    scaleW: scaleW,
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+
+              SizedBox(height: scaleH(8)),
+
               Row(
                 children: [
                   _buildInfoChip(
                     icon: Icons.attach_money,
                     label: '\$${product.totalValue.toStringAsFixed(2)}',
-                    color: AppColors.green500,
+                    color: AppColors.green600,
+                    scaleW: scaleW,
                   ),
                   const Spacer(),
                   if (product.totalReserved > 0)
                     _buildInfoChip(
                       icon: Icons.lock_outline,
                       label: 'Reservado: ${product.totalReserved}',
-                      color: AppColors.orange500,
+                      color: AppColors.amber600,
+                      scaleW: scaleW,
                     ),
                 ],
               ),
@@ -119,22 +145,23 @@ class InventoryCard extends StatelessWidget {
     required IconData icon,
     required String label,
     required Color color,
+    required double Function(double) scaleW,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: scaleW(8), vertical: scaleW(4)),
       decoration: BoxDecoration(
-        color: AppColors.shadowColor,
-        borderRadius: BorderRadius.circular(8),
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(scaleW(8)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
+          Icon(icon, size: scaleW(14), color: color),
+          SizedBox(width: scaleW(4)),
           Text(
             label,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: scaleW(12),
               color: color,
               fontWeight: FontWeight.w500,
             ),
@@ -148,19 +175,19 @@ class InventoryCard extends StatelessWidget {
     if (stock == 0) {
       return StockStatus(
         text: 'Agotado',
-        color: AppColors.red500,
+        color: AppColors.red600,
         backgroundColor: AppColors.red50,
       );
     } else if (stock <= 5) {
       return StockStatus(
         text: 'Poco Stock',
-        color: AppColors.orange500,
-        backgroundColor: AppColors.orange50,
+        color: AppColors.amber600,
+        backgroundColor: AppColors.amber50,
       );
     } else {
       return StockStatus(
         text: 'En Stock',
-        color: AppColors.green500,
+        color: AppColors.green600,
         backgroundColor: AppColors.green50,
       );
     }

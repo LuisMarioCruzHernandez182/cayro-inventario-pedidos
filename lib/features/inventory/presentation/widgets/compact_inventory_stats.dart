@@ -9,9 +9,16 @@ class CompactInventoryStats extends StatelessWidget {
   final InventoryStatsEntity stats;
 
   const CompactInventoryStats({super.key, required this.stats});
-  
+
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
+
+    double scaleW(double v) => v * (width / 390);
+    double scaleH(double v) => v * (height / 844);
+
     return Column(
       children: [
         Row(
@@ -21,12 +28,13 @@ class CompactInventoryStats extends StatelessWidget {
                 title: 'Total Productos',
                 value: stats.totalProducts.toString(),
                 subtitle: '${stats.totalStock} disponibles',
-                color: AppColors.blue500,
+                color: AppColors.blue600,
                 backgroundColor: AppColors.blue50,
                 icon: Icons.inventory_2,
+                scaleW: scaleW,
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: scaleW(12)),
             Expanded(
               child: _buildStatCard(
                 title: 'Valor Total',
@@ -35,14 +43,14 @@ class CompactInventoryStats extends StatelessWidget {
                 color: AppColors.green600,
                 backgroundColor: AppColors.green50,
                 icon: Icons.attach_money,
+                scaleW: scaleW,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: scaleH(12)),
         Row(
           children: [
-            // 🔹 En stock
             Expanded(
               child: GestureDetector(
                 onTap: () {
@@ -57,15 +65,15 @@ class CompactInventoryStats extends StatelessWidget {
                 child: _buildSmallStatCard(
                   value: stats.inStockCount.toString(),
                   title: 'En Stock',
-                  color: AppColors.green500,
+                  color: AppColors.green600,
                   backgroundColor: AppColors.green50,
                   icon: Icons.check_circle,
+                  scaleW: scaleW,
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: scaleW(8)),
 
-            // 🔹 Poco stock
             Expanded(
               child: GestureDetector(
                 onTap: () {
@@ -80,15 +88,15 @@ class CompactInventoryStats extends StatelessWidget {
                 child: _buildSmallStatCard(
                   value: stats.lowStockCount.toString(),
                   title: 'Poco Stock',
-                  color: AppColors.orange500,
-                  backgroundColor: AppColors.orange50,
-                  icon: Icons.warning,
+                  color: AppColors.amber600,
+                  backgroundColor: AppColors.amber50,
+                  icon: Icons.warning_amber_rounded,
+                  scaleW: scaleW,
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: scaleW(8)),
 
-            // 🔹 Sin stock
             Expanded(
               child: GestureDetector(
                 onTap: () {
@@ -103,9 +111,10 @@ class CompactInventoryStats extends StatelessWidget {
                 child: _buildSmallStatCard(
                   value: stats.outOfStockCount.toString(),
                   title: 'Agotados',
-                  color: AppColors.red500,
+                  color: AppColors.red600,
                   backgroundColor: AppColors.red50,
                   icon: Icons.cancel,
+                  scaleW: scaleW,
                 ),
               ),
             ),
@@ -122,26 +131,34 @@ class CompactInventoryStats extends StatelessWidget {
     required Color color,
     required Color backgroundColor,
     required IconData icon,
+    required double Function(double) scaleW,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(scaleW(16)),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
+        borderRadius: BorderRadius.circular(scaleW(16)),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, color: color, size: 20),
-              const SizedBox(width: 8),
+              Icon(icon, color: color, size: scaleW(20)),
+              SizedBox(width: scaleW(8)),
               Expanded(
                 child: Text(
                   title,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: scaleW(12),
                     fontWeight: FontWeight.w600,
                     color: color,
                   ),
@@ -149,20 +166,20 @@ class CompactInventoryStats extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: scaleW(8)),
           Text(
             value,
             style: TextStyle(
-              fontSize: 24,
+              fontSize: scaleW(22),
               fontWeight: FontWeight.bold,
               color: color,
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: scaleW(4)),
           Text(
             subtitle,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: scaleW(11),
               color: color.withValues(alpha: 0.7),
               fontWeight: FontWeight.w500,
             ),
@@ -178,38 +195,39 @@ class CompactInventoryStats extends StatelessWidget {
     required Color color,
     required Color backgroundColor,
     required IconData icon,
+    required double Function(double) scaleW,
   }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(scaleW(12)),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(scaleW(12)),
         border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: EdgeInsets.all(scaleW(8)),
             decoration: BoxDecoration(
               color: color,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(scaleW(20)),
             ),
-            child: Icon(icon, color: Colors.white, size: 16),
+            child: Icon(icon, color: Colors.white, size: scaleW(16)),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: scaleW(8)),
           Text(
             value,
             style: TextStyle(
-              fontSize: 18,
+              fontSize: scaleW(18),
               fontWeight: FontWeight.bold,
               color: color,
             ),
           ),
-          const SizedBox(height: 2),
+          SizedBox(height: scaleW(2)),
           Text(
             title,
             style: TextStyle(
-              fontSize: 10,
+              fontSize: scaleW(10),
               color: color,
               fontWeight: FontWeight.w600,
             ),

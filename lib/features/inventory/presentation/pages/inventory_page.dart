@@ -88,6 +88,13 @@ class _InventoryPageState extends State<InventoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
+
+    double scaleW(double v) => v * (width / 390);
+    double scaleH(double v) => v * (height / 844);
+
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
         if (state is AuthUnauthenticated) {
@@ -97,35 +104,37 @@ class _InventoryPageState extends State<InventoryPage> {
           return const SizedBox.shrink();
         }
 
-        if (state is AuthLoading) return _buildLoadingState();
+        if (state is AuthLoading) {
+          return _buildLoadingState(scaleW, scaleH);
+        }
 
         return BlocProvider.value(
           value: _inventoryBloc,
-          child: _buildInventoryContent(context),
+          child: _buildInventoryContent(context, scaleW, scaleH),
         );
       },
     );
   }
 
-  Widget _buildLoadingState() {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [AppColors.blue600, AppColors.blue500, AppColors.blue400],
-        ),
-      ),
-      child: const SafeArea(
+  Widget _buildLoadingState(
+    double Function(double) scaleW,
+    double Function(double) scaleH,
+  ) {
+    return Scaffold(
+      backgroundColor: AppColors.blue600,
+      body: SafeArea(
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(color: Colors.white),
-              SizedBox(height: 16),
+              CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: scaleW(3),
+              ),
+              SizedBox(height: scaleH(16)),
               Text(
                 'Cargando inventario...',
-                style: TextStyle(color: Colors.white, fontSize: 16),
+                style: TextStyle(color: Colors.white, fontSize: scaleW(16)),
               ),
             ],
           ),
@@ -134,283 +143,342 @@ class _InventoryPageState extends State<InventoryPage> {
     );
   }
 
-  Widget _buildInventoryContent(BuildContext context) {
+  Widget _buildInventoryContent(
+    BuildContext context,
+    double Function(double) scaleW,
+    double Function(double) scaleH,
+  ) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [AppColors.blue600, AppColors.blue500, AppColors.blue400],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // 🔹 Encabezado superior
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24.0,
-                  vertical: 20,
-                ),
-                child: Column(
-                  children: [
-                    const Text(
-                      'Inventario',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                      textAlign: TextAlign.center,
+      backgroundColor: AppColors.blue600,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: scaleW(24),
+                vertical: scaleH(20),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'Inventario',
+                    style: TextStyle(
+                      fontSize: scaleW(28),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Gestión de productos y stock',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white.withValues(alpha: 0.9),
-                        fontWeight: FontWeight.w300,
-                      ),
-                      textAlign: TextAlign.center,
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: scaleH(8)),
+                  Text(
+                    'Gestión de productos y stock',
+                    style: TextStyle(
+                      fontSize: scaleW(16),
+                      color: Colors.white,
+                      fontWeight: FontWeight.w300,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(scaleW(32)),
+                    topRight: Radius.circular(scaleW(32)),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.shadowColor,
+                      blurRadius: 8,
+                      offset: const Offset(0, -2),
                     ),
                   ],
                 ),
-              ),
-
-              // 🔹 Contenido principal
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(32),
-                      topRight: Radius.circular(32),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      // 🔹 Barra de búsqueda
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
-                        child: BlocBuilder<InventoryBloc, InventoryState>(
-                          builder: (context, state) {
-                            return SearchBarWithButton(
-                              controller: _searchController,
-                              onSearch: _onSearch,
-                              onClear: _onClearSearch,
-                            );
-                          },
+                child: BlocBuilder<InventoryBloc, InventoryState>(
+                  builder: (context, state) {
+                    if (state is InventoryLoading) {
+                      return Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircularProgressIndicator(
+                              color: AppColors.blue600,
+                              strokeWidth: scaleW(3),
+                            ),
+                            SizedBox(height: scaleH(16)),
+                            Text(
+                              "Cargando productos...",
+                              style: TextStyle(
+                                color: AppColors.blue600,
+                                fontSize: scaleW(16),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
+                      );
+                    }
 
-                      // 🔹 Lista principal
-                      Expanded(
-                        child: BlocBuilder<InventoryBloc, InventoryState>(
-                          builder: (context, state) {
-                            if (state is InventoryLoading) {
-                              return const Center(
-                                child: CircularProgressIndicator(),
-                              );
-                            }
+                    if (state is InventoryWithStatsLoaded) {
+                      if (state.products.isEmpty) {
+                        return _buildEmptyOrFilteredState(
+                          state,
+                          scaleW,
+                          scaleH,
+                        );
+                      }
 
-                            if (state is InventoryWithStatsLoaded) {
-                              if (state.products.isEmpty) {
-                                return _buildEmptyOrFilteredState(state);
-                              }
+                      return RefreshIndicator(
+                        onRefresh: () async {
+                          _inventoryBloc.add(RefreshInventory());
+                        },
+                        child: CustomScrollView(
+                          controller: _scrollController,
+                          slivers: [
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: EdgeInsets.fromLTRB(
+                                  scaleW(24),
+                                  scaleH(20),
+                                  scaleW(24),
+                                  scaleH(16),
+                                ),
+                                child: SearchBarWithButton(
+                                  controller: _searchController,
+                                  onSearch: _onSearch,
+                                  onClear: _onClearSearch,
+                                ),
+                              ),
+                            ),
 
-                              return RefreshIndicator(
-                                onRefresh: () async {
-                                  _inventoryBloc.add(RefreshInventory());
-                                },
-                                child: CustomScrollView(
-                                  controller: _scrollController,
-                                  slivers: [
-                                    // 🔹 Estadísticas
-                                    if (state.stats != null)
-                                      SliverToBoxAdapter(
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 24,
-                                            vertical: 8,
-                                          ),
-                                          child: CompactInventoryStats(
-                                            key: ValueKey(
-                                              state.stats!.hashCode,
+                            if (state.stats != null)
+                              SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: scaleW(24),
+                                    vertical: scaleH(8),
+                                  ),
+                                  child: CompactInventoryStats(
+                                    stats: state.stats!,
+                                  ),
+                                ),
+                              ),
+
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: scaleW(10),
+                                  vertical: scaleH(4),
+                                ),
+                                child: PaginationInfo(
+                                  currentPage: state.currentPage,
+                                  totalPages: state.totalPages,
+                                  totalProducts: state.totalProducts,
+                                  currentProductsCount: state.products.length,
+                                  hasReachedMax: state.hasReachedMax,
+                                  isLoadingMore: state.isLoadingMore,
+                                ),
+                              ),
+                            ),
+
+                            const SliverToBoxAdapter(
+                              child: SizedBox(height: 12),
+                            ),
+
+                            SliverList(
+                              delegate: SliverChildBuilderDelegate((
+                                context,
+                                index,
+                              ) {
+                                final product = state.products[index];
+                                return Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: scaleW(10),
+                                    vertical: scaleH(4),
+                                  ),
+                                  child: InventoryCard(
+                                    product: product,
+                                    onTap: () async {
+                                      final updated = await context.push(
+                                        '/main/update-stock/${product.id}',
+                                      );
+                                      if (updated == true && context.mounted) {
+                                        _inventoryBloc.add(RefreshInventory());
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Inventario actualizado correctamente',
                                             ),
-                                            stats: state.stats!,
-                                          ),
-                                        ),
-                                      ),
-
-                                    // 🔹 Info de paginación
-                                    SliverToBoxAdapter(
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 4,
-                                        ),
-                                        child: PaginationInfo(
-                                          currentPage: state.currentPage,
-                                          totalPages: state.totalPages,
-                                          totalProducts: state.totalProducts,
-                                          currentProductsCount:
-                                              state.products.length,
-                                          hasReachedMax: state.hasReachedMax,
-                                          isLoadingMore: state.isLoadingMore,
-                                        ),
-                                      ),
-                                    ),
-
-                                    const SliverToBoxAdapter(
-                                      child: SizedBox(height: 16),
-                                    ),
-
-                                    SliverList(
-                                      delegate: SliverChildBuilderDelegate((
-                                        context,
-                                        index,
-                                      ) {
-                                        final product = state.products[index];
-                                        return Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 10,
-                                            vertical: 4,
-                                          ),
-                                          child: InventoryCard(
-                                            product: product,
-                                            onTap: () async {
-                                              final updated = await context.push(
-                                                '/main/update-stock/${product.id}',
-                                              );
-                                              if (updated == true &&
-                                                  context.mounted) {
-                                                _inventoryBloc.add(
-                                                  RefreshInventory(),
-                                                );
-                                                ScaffoldMessenger.of(
-                                                  context,
-                                                ).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text(
-                                                      'Inventario actualizado correctamente',
-                                                    ),
-                                                    backgroundColor:
-                                                        AppColors.green600,
-                                                  ),
-                                                );
-                                              }
-                                            },
+                                            backgroundColor: AppColors.green600,
                                           ),
                                         );
-                                      }, childCount: state.products.length),
-                                    ),
+                                      }
+                                    },
+                                  ),
+                                );
+                              }, childCount: state.products.length),
+                            ),
 
-                                    // 🔹 Controles de paginación
-                                    SliverToBoxAdapter(
-                                      child: Padding(
-                                        padding: const EdgeInsets.fromLTRB(
-                                          24,
-                                          24,
-                                          24,
-                                          32,
-                                        ),
-                                        child: Column(
-                                          children: [
-                                            PaginationControls(
-                                              currentPage: state.currentPage,
-                                              totalPages: state.totalPages,
-                                              isLoading: state.isLoadingMore,
-                                              onPageChanged: _onPageChanged,
-                                            ),
-                                            const SizedBox(height: 16),
-                                            Text(
-                                              'Página ${state.currentPage} de ${state.totalPages}',
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                color: AppColors.gray600,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: EdgeInsets.fromLTRB(
+                                  scaleW(24),
+                                  scaleH(24),
+                                  scaleW(24),
+                                  scaleH(32),
+                                ),
+                                child: Column(
+                                  children: [
+                                    PaginationControls(
+                                      currentPage: state.currentPage,
+                                      totalPages: state.totalPages,
+                                      isLoading: state.isLoadingMore,
+                                      onPageChanged: _onPageChanged,
+                                    ),
+                                    SizedBox(height: scaleH(16)),
+                                    Text(
+                                      'Página ${state.currentPage} de ${state.totalPages}',
+                                      style: TextStyle(
+                                        fontSize: scaleW(14),
+                                        color: AppColors.gray600,
                                       ),
                                     ),
                                   ],
                                 ),
-                              );
-                            }
-
-                            if (state is InventoryError) {
-                              return _buildErrorState(state);
-                            }
-
-                            return const Center(
-                              child: CircularProgressIndicator(),
-                            );
-                          },
+                              ),
+                            ),
+                          ],
                         ),
+                      );
+                    }
+
+                    if (state is InventoryError) {
+                      return _buildErrorState(state, scaleW, scaleH);
+                    }
+
+                    return Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(
+                            color: AppColors.blue600,
+                            strokeWidth: scaleW(3),
+                          ),
+                          SizedBox(height: scaleH(16)),
+                          Text(
+                            "Cargando productos...",
+                            style: TextStyle(
+                              color: AppColors.blue600,
+                              fontSize: scaleW(16),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  /// 🔹 Estado vacío o sin resultados (mantiene diseño + botón “Limpiar filtros”)
-  Widget _buildEmptyOrFilteredState(InventoryWithStatsLoaded state) {
+  Widget _buildEmptyOrFilteredState(
+    InventoryWithStatsLoaded state,
+    double Function(double) scaleW,
+    double Function(double) scaleH,
+  ) {
     final hasFilters =
         state.currentSearch != null || state.currentStockStatus != null;
 
-    return RefreshIndicator(
-      onRefresh: () async {
-        _inventoryBloc.add(RefreshInventory());
-      },
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: scaleW(24)),
         child: Container(
-          width: double.infinity,
-          height: MediaQuery.of(context).size.height * 0.7,
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding: EdgeInsets.all(scaleW(28)),
+          decoration: BoxDecoration(
+            color: AppColors.blue50,
+            borderRadius: BorderRadius.circular(scaleW(20)),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.shadowColor,
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Container(padding: const EdgeInsets.all(26)),
-              const SizedBox(height: 24),
+              Container(
+                padding: EdgeInsets.all(scaleW(16)),
+                decoration: BoxDecoration(
+                  color: AppColors.blue100,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.inventory_2_outlined,
+                  size: scaleW(60),
+                  color: AppColors.blue600,
+                ),
+              ),
+              SizedBox(height: scaleH(20)),
               Text(
                 hasFilters
                     ? 'No se encontraron productos con los filtros aplicados.'
-                    : 'No se encontraron productos en el inventario.',
+                    : 'Tu inventario está vacío.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
+                style: TextStyle(
+                  fontSize: scaleW(18),
+                  fontWeight: FontWeight.w700,
                   color: AppColors.gray800,
                 ),
               ),
-              const SizedBox(height: 12),
-
-              // 🔹 Botón “Limpiar filtros”
+              SizedBox(height: scaleH(8)),
+              Text(
+                hasFilters
+                    ? 'Intenta ajustar los filtros o restablecer la búsqueda.'
+                    : 'Agrega nuevos productos para comenzar a administrar tu inventario.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: scaleW(14),
+                  color: AppColors.gray500,
+                  height: 1.4,
+                ),
+              ),
+              SizedBox(height: scaleH(20)),
               if (hasFilters)
                 ElevatedButton.icon(
                   onPressed: _onClearFilters,
-                  icon: const Icon(Icons.filter_alt_off, size: 18),
-                  label: const Text('Limpiar filtros'),
+                  icon: Icon(Icons.filter_alt_off_rounded, size: scaleW(18)),
+                  label: Text(
+                    'Limpiar filtros',
+                    style: TextStyle(
+                      fontSize: scaleW(15),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.blue600,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
+                    elevation: 3,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: scaleW(28),
+                      vertical: scaleH(14),
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(scaleW(16)),
                     ),
                   ),
                 ),
@@ -421,31 +489,38 @@ class _InventoryPageState extends State<InventoryPage> {
     );
   }
 
-  /// 🔹 Estado de error
-  Widget _buildErrorState(InventoryError state) {
+  Widget _buildErrorState(
+    InventoryError state,
+    double Function(double) scaleW,
+    double Function(double) scaleH,
+  ) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(scaleW(24)),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: AppColors.red500),
-            const SizedBox(height: 16),
+            Icon(
+              Icons.error_outline,
+              size: scaleW(64),
+              color: AppColors.red500,
+            ),
+            SizedBox(height: scaleH(16)),
             Text(
               'Error cargando inventario',
               style: TextStyle(
-                fontSize: 16,
-                color: AppColors.red600,
+                fontSize: scaleW(16),
                 fontWeight: FontWeight.w600,
+                color: AppColors.red600,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: scaleH(8)),
             Text(
               state.message,
-              style: TextStyle(fontSize: 14, color: AppColors.gray600),
+              style: TextStyle(fontSize: scaleW(14), color: AppColors.gray600),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: scaleH(16)),
             ElevatedButton(
               onPressed: () {
                 _inventoryBloc.add(RefreshInventory());
@@ -453,15 +528,15 @@ class _InventoryPageState extends State<InventoryPage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.blue600,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 28,
-                  vertical: 14,
+                padding: EdgeInsets.symmetric(
+                  horizontal: scaleW(28),
+                  vertical: scaleH(14),
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(scaleW(12)),
                 ),
               ),
-              child: const Text('Reintentar'),
+              child: Text('Reintentar', style: TextStyle(fontSize: scaleW(14))),
             ),
           ],
         ),

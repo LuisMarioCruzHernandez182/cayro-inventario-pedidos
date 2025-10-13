@@ -21,13 +21,27 @@ class PaginationInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
+
+    double scaleW(double v) => v * (width / 390);
+    double scaleH(double v) => v * (height / 844);
+
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-      padding: const EdgeInsets.all(8),
+      margin: EdgeInsets.symmetric(horizontal: scaleW(16), vertical: scaleH(4)),
+      padding: EdgeInsets.all(scaleW(10)),
       decoration: BoxDecoration(
         color: AppColors.blue50,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(scaleW(12)),
         border: Border.all(color: AppColors.blue100, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.blue600.withValues(alpha: 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -36,14 +50,15 @@ class PaginationInfo extends StatelessWidget {
               icon: Icons.inventory_2_outlined,
               title: 'Productos encontrados',
               value: '$currentProductsCount de $totalProducts',
+              scaleW: scaleW,
             ),
           ),
 
           Container(
             width: 1,
-            height: 35,
-            margin: const EdgeInsets.symmetric(horizontal: 6),
-            color: AppColors.blue100.withValues(alpha: 0.3),
+            height: scaleH(32),
+            margin: EdgeInsets.symmetric(horizontal: scaleW(8)),
+            color: AppColors.blue100.withValues(alpha: 0.4),
           ),
 
           Expanded(
@@ -51,6 +66,7 @@ class PaginationInfo extends StatelessWidget {
               icon: Icons.layers_outlined,
               title: 'Página actual',
               value: '$currentPage de $totalPages',
+              scaleW: scaleW,
             ),
           ),
         ],
@@ -62,33 +78,38 @@ class PaginationInfo extends StatelessWidget {
     required IconData icon,
     required String title,
     required String value,
+    required double Function(double) scaleW,
   }) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(icon, size: 16, color: AppColors.blue600),
-            const SizedBox(width: 6),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 13,
-                color: AppColors.gray600,
-                fontWeight: FontWeight.w500,
+            Icon(icon, size: scaleW(18), color: AppColors.blue600),
+            SizedBox(width: scaleW(6)),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: scaleW(13),
+                  color: AppColors.gray600,
+                  fontWeight: FontWeight.w500,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
-              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
-        const SizedBox(height: 2),
+        SizedBox(height: scaleW(3)),
+
         Padding(
-          padding: const EdgeInsets.only(left: 22),
+          padding: EdgeInsets.only(left: scaleW(24)),
           child: Text(
             value,
             style: TextStyle(
-              fontSize: 15,
+              fontSize: scaleW(15),
               color: AppColors.blue600,
               fontWeight: FontWeight.w700,
             ),

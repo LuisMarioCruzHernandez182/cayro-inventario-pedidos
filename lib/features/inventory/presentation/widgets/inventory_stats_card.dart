@@ -9,45 +9,67 @@ class InventoryStatsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.all(16),
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
+
+    double scaleW(double v) => v * (width / 390);
+    double scaleH(double v) => v * (height / 844);
+
+    return Container(
+      margin: EdgeInsets.all(scaleW(16)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(scaleW(16)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+        border: Border.all(color: AppColors.gray200),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(scaleW(20)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Resumen del Inventario',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: scaleW(20),
                 fontWeight: FontWeight.bold,
                 color: AppColors.gray900,
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: scaleH(16)),
+
             Row(
               children: [
                 Expanded(
                   child: _buildStatItem(
-                    icon: Icons.inventory_2,
+                    icon: Icons.inventory_2_rounded,
                     title: 'Productos',
                     value: stats.totalProducts.toString(),
-                    color: AppColors.blue500,
+                    color: AppColors.blue600,
+                    scaleW: scaleW,
                   ),
                 ),
+                SizedBox(width: scaleW(12)),
                 Expanded(
                   child: _buildStatItem(
-                    icon: Icons.palette,
+                    icon: Icons.palette_rounded,
                     title: 'Variantes',
                     value: stats.totalVariants.toString(),
                     color: AppColors.purple500,
+                    scaleW: scaleW,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: scaleH(16)),
+
             Row(
               children: [
                 Expanded(
@@ -56,68 +78,81 @@ class InventoryStatsCard extends StatelessWidget {
                     title: 'En Stock',
                     value: stats.inStockCount.toString(),
                     color: AppColors.green600,
+                    scaleW: scaleW,
                   ),
                 ),
+                SizedBox(width: scaleW(8)),
                 Expanded(
                   child: _buildStatItem(
-                    icon: Icons.warning_amber,
+                    icon: Icons.warning_amber_rounded,
                     title: 'Poco Stock',
                     value: stats.lowStockCount.toString(),
-                    color: AppColors.orange500,
+                    color: AppColors.amber600,
+                    scaleW: scaleW,
                   ),
                 ),
+                SizedBox(width: scaleW(8)),
                 Expanded(
                   child: _buildStatItem(
-                    icon: Icons.error_outline,
+                    icon: Icons.cancel_rounded,
                     title: 'Agotados',
                     value: stats.outOfStockCount.toString(),
-                    color: AppColors.red500,
+                    color: AppColors.red600,
+                    scaleW: scaleW,
                   ),
                 ),
               ],
             ),
 
-            const SizedBox(height: 16),
+            SizedBox(height: scaleH(20)),
+
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(scaleW(16)),
               decoration: BoxDecoration(
                 color: AppColors.green50,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(scaleW(12)),
                 border: Border.all(color: AppColors.green200),
               ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
                       Icon(
-                        Icons.attach_money,
+                        Icons.attach_money_rounded,
                         color: AppColors.green600,
-                        size: 24,
+                        size: scaleW(24),
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Valor Total del Inventario',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.green800,
+                      SizedBox(width: scaleW(8)),
+                      Expanded(
+                        child: Text(
+                          'Valor Total del Inventario',
+                          style: TextStyle(
+                            fontSize: scaleW(16),
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.green800,
+                          ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: scaleH(8)),
                   Text(
                     '\$${stats.totalInventoryValue.toStringAsFixed(2)}',
                     style: TextStyle(
-                      fontSize: 24,
+                      fontSize: scaleW(24),
                       fontWeight: FontWeight.bold,
                       color: AppColors.green700,
                     ),
                   ),
                   Text(
                     '${stats.totalStock} unidades totales',
-                    style: TextStyle(fontSize: 14, color: AppColors.green600),
+                    style: TextStyle(
+                      fontSize: scaleW(13),
+                      color: AppColors.green600,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
               ),
@@ -133,31 +168,32 @@ class InventoryStatsCard extends StatelessWidget {
     required String title,
     required String value,
     required Color color,
+    required double Function(double) scaleW,
   }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(scaleW(12)),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(scaleW(12)),
       ),
       child: Column(
         children: [
-          Icon(icon, color: color, size: 28),
-          const SizedBox(height: 8),
+          Icon(icon, color: color, size: scaleW(28)),
+          SizedBox(height: scaleW(8)),
           Text(
             value,
             style: TextStyle(
-              fontSize: 20,
+              fontSize: scaleW(20),
               fontWeight: FontWeight.bold,
               color: color,
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: scaleW(4)),
           Text(
             title,
             style: TextStyle(
-              fontSize: 12,
-              color: AppColors.gray600,
+              fontSize: scaleW(12),
+              color: AppColors.gray700,
               fontWeight: FontWeight.w500,
             ),
             textAlign: TextAlign.center,

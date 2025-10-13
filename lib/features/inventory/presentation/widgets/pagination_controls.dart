@@ -17,12 +17,22 @@ class PaginationControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
+
+    double scaleW(double v) => v * (width / 390);
+    double scaleH(double v) => v * (height / 844);
+
     if (totalPages <= 1) {
       return const SizedBox.shrink();
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        vertical: scaleH(16),
+        horizontal: scaleW(20),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -30,25 +40,27 @@ class PaginationControls extends StatelessWidget {
             icon: Icons.chevron_left_rounded,
             isEnabled: currentPage > 1 && !isLoading,
             onTap: () => onPageChanged(currentPage - 1),
+            scaleW: scaleW,
           ),
 
-          const SizedBox(width: 16),
+          SizedBox(width: scaleW(20)),
 
           Text(
             'Página $currentPage de $totalPages',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: scaleW(14),
               color: AppColors.gray700,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
             ),
           ),
 
-          const SizedBox(width: 16),
+          SizedBox(width: scaleW(20)),
 
           _buildIconButton(
             icon: Icons.chevron_right_rounded,
             isEnabled: currentPage < totalPages && !isLoading,
             onTap: () => onPageChanged(currentPage + 1),
+            scaleW: scaleW,
           ),
         ],
       ),
@@ -59,19 +71,20 @@ class PaginationControls extends StatelessWidget {
     required IconData icon,
     required bool isEnabled,
     required VoidCallback onTap,
+    required double Function(double) scaleW,
   }) {
     return Container(
-      width: 40,
-      height: 40,
+      width: scaleW(42),
+      height: scaleW(42),
       decoration: BoxDecoration(
-        color: isEnabled ? AppColors.blue500 : Colors.grey.shade300,
         shape: BoxShape.circle,
+        color: isEnabled ? AppColors.blue600 : AppColors.gray300,
         boxShadow: isEnabled
             ? [
                 BoxShadow(
-                  color: AppColors.blue500.withValues(alpha: 0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
+                  color: AppColors.blue600.withValues(alpha: 0.25),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
                 ),
               ]
             : null,
@@ -80,8 +93,10 @@ class PaginationControls extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: isEnabled ? onTap : null,
-          borderRadius: BorderRadius.circular(20),
-          child: Icon(icon, size: 20, color: Colors.white),
+          borderRadius: BorderRadius.circular(scaleW(21)),
+          splashColor: Colors.white.withValues(alpha: 0.2),
+          highlightColor: Colors.white.withValues(alpha: 0.1),
+          child: Icon(icon, size: scaleW(22), color: Colors.white),
         ),
       ),
     );
