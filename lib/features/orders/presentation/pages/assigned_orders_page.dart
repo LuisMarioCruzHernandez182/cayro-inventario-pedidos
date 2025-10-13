@@ -132,192 +132,252 @@ class _AssignedOrdersPageState extends State<AssignedOrdersPage> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
+
+    // Funciones de escalado responsivo
+    double scaleW(double value) => value * (width / 390);
+    double scaleH(double value) => value * (height / 844);
+
     if (!mounted || _employeeId == null) {
-      return const Scaffold(
-        backgroundColor: Colors.white,
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        backgroundColor: AppColors.blue600, // Fondo azul sólido
+        body: const Center(
+          child: CircularProgressIndicator(color: Colors.white),
+        ),
       );
     }
 
     return BlocProvider.value(
       value: _ordersBloc,
       child: Scaffold(
-        backgroundColor: Colors.white,
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.blue600, AppColors.blue500, AppColors.blue400],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-          ),
-          child: SafeArea(
-            child: Column(
-              children: [
-                _buildHeader(),
-                Expanded(
-                  child: Container(
-                    width: double.infinity,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(32),
-                        topRight: Radius.circular(32),
-                      ),
+        backgroundColor: AppColors.blue600, // Fondo azul sólido
+        body: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(scaleW, scaleH),
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(scaleW(32)),
+                      topRight: Radius.circular(scaleW(32)),
                     ),
-                    child: _employeeId == null
-                        ? _buildNoSessionState()
-                        : BlocBuilder<OrdersBloc, OrdersState>(
-                            builder: (context, state) {
-                              if (state is OrdersLoading) {
-                                return const Center(
-                                  child: CircularProgressIndicator(),
-                                );
-                              } else if (state is OrdersError) {
-                                return _buildErrorState(state.message);
-                              } else if (state is OrdersLoaded) {
-                                if (state.orders.isEmpty) {
-                                  final hasFilters =
-                                      _currentSearch != null ||
-                                      _filterStatus != null;
-                                  return _buildEmptyState(hasFilters);
-                                }
-
-                                return RefreshIndicator(
-                                  onRefresh: () async {
-                                    _ordersBloc.add(
-                                      LoadAssignedOrdersEvent(
-                                        employeeId: _employeeId!,
-                                        search: _currentSearch,
-                                        page: _currentPage,
-                                        status: _filterStatus,
+                  ),
+                  child: _employeeId == null
+                      ? _buildNoSessionState(scaleW, scaleH)
+                      : BlocBuilder<OrdersBloc, OrdersState>(
+                          builder: (context, state) {
+                            if (state is OrdersLoading) {
+                              return Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    CircularProgressIndicator(
+                                      color: AppColors.blue600,
+                                      strokeWidth: scaleW(3),
+                                    ),
+                                    SizedBox(height: scaleH(16)),
+                                    Text(
+                                      "Cargando pedidos...",
+                                      style: TextStyle(
+                                        color: AppColors.blue600,
+                                        fontSize: scaleW(16),
+                                        fontWeight: FontWeight.w500,
                                       ),
-                                    );
-                                  },
-                                  child: CustomScrollView(
-                                    controller: _scrollController,
-                                    slivers: [
-                                      SliverToBoxAdapter(
-                                        child: Padding(
-                                          padding: const EdgeInsets.fromLTRB(
-                                            20,
-                                            20,
-                                            20,
-                                            12,
-                                          ),
-                                          child: _buildSearchBar(),
-                                        ),
-                                      ),
-                                      SliverToBoxAdapter(
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 20,
-                                          ),
-                                          child: _buildStatusFilters(),
-                                        ),
-                                      ),
-                                      SliverList(
-                                        delegate: SliverChildBuilderDelegate((
-                                          context,
-                                          i,
-                                        ) {
-                                          final o = state.orders[i];
-                                          final color = _statusColor(o.status);
-                                          return Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 20,
-                                              vertical: 6,
-                                            ),
-                                            child: _buildOrderCard(
-                                              context,
-                                              id: o.id,
-                                              saleReference: o.saleReference,
-                                              customer: o.userName,
-                                              total:
-                                                  '\$${o.totalAmount.toStringAsFixed(2)}',
-                                              date: o.createdAt,
-                                              status: o.status,
-                                              productsCount: o.productsCount,
-                                              color: color.$1,
-                                              backgroundColor: color.$2,
-                                            ),
-                                          );
-                                        }, childCount: state.orders.length),
-                                      ),
-                                      SliverToBoxAdapter(
-                                        child: Padding(
-                                          padding: const EdgeInsets.fromLTRB(
-                                            20,
-                                            24,
-                                            20,
-                                            40,
-                                          ),
-                                          child: OrdersPaginationControls(
-                                            currentPage: _currentPage,
-                                            totalPages: state.totalPages,
-                                            isLoading: state is OrdersLoading,
-                                            onPageChanged: _onPageChanged,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            } else if (state is OrdersError) {
+                              return _buildErrorState(
+                                state.message,
+                                scaleW,
+                                scaleH,
+                              );
+                            } else if (state is OrdersLoaded) {
+                              if (state.orders.isEmpty) {
+                                final hasFilters =
+                                    _currentSearch != null ||
+                                    _filterStatus != null;
+                                return _buildEmptyState(
+                                  hasFilters,
+                                  scaleW,
+                                  scaleH,
                                 );
                               }
-                              return const SizedBox.shrink();
-                            },
-                          ),
-                  ),
+
+                              return RefreshIndicator(
+                                onRefresh: () async {
+                                  _ordersBloc.add(
+                                    LoadAssignedOrdersEvent(
+                                      employeeId: _employeeId!,
+                                      search: _currentSearch,
+                                      page: _currentPage,
+                                      status: _filterStatus,
+                                    ),
+                                  );
+                                },
+                                child: CustomScrollView(
+                                  controller: _scrollController,
+                                  slivers: [
+                                    SliverToBoxAdapter(
+                                      child: Padding(
+                                        padding: EdgeInsets.fromLTRB(
+                                          scaleW(20),
+                                          scaleH(20),
+                                          scaleW(20),
+                                          scaleH(12),
+                                        ),
+                                        child: _buildSearchBar(scaleW, scaleH),
+                                      ),
+                                    ),
+                                    SliverToBoxAdapter(
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: scaleW(20),
+                                        ),
+                                        child: _buildStatusFilters(
+                                          scaleW,
+                                          scaleH,
+                                        ),
+                                      ),
+                                    ),
+                                    SliverList(
+                                      delegate: SliverChildBuilderDelegate((
+                                        context,
+                                        i,
+                                      ) {
+                                        final o = state.orders[i];
+                                        final color = _statusColor(o.status);
+                                        return Padding(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: scaleW(20),
+                                            vertical: scaleH(6),
+                                          ),
+                                          child: _buildOrderCard(
+                                            context,
+                                            id: o.id,
+                                            saleReference: o.saleReference,
+                                            customer: o.userName,
+                                            total:
+                                                '\$${o.totalAmount.toStringAsFixed(2)}',
+                                            date: o.createdAt,
+                                            status: o.status,
+                                            productsCount: o.productsCount,
+                                            color: color.$1,
+                                            backgroundColor: color.$2,
+                                            scaleW: scaleW,
+                                            scaleH: scaleH,
+                                          ),
+                                        );
+                                      }, childCount: state.orders.length),
+                                    ),
+                                    SliverToBoxAdapter(
+                                      child: Padding(
+                                        padding: EdgeInsets.fromLTRB(
+                                          scaleW(20),
+                                          scaleH(24),
+                                          scaleW(20),
+                                          scaleH(40),
+                                        ),
+                                        child: OrdersPaginationControls(
+                                          currentPage: _currentPage,
+                                          totalPages: state.totalPages,
+                                          isLoading: state is OrdersLoading,
+                                          onPageChanged: _onPageChanged,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
+                        ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(
+    double Function(double) scaleW,
+    double Function(double) scaleH,
+  ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 20),
+      padding: EdgeInsets.symmetric(vertical: scaleH(20)),
       child: Column(
         children: [
-          const Text(
+          Text(
             'Mis Pedidos',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 28,
+              fontSize: scaleW(28),
               fontWeight: FontWeight.bold,
             ),
+            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: scaleH(8)),
           Text(
             'Pedidos asignados a ti',
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.9),
-              fontSize: 16,
+              color: Colors.white,
+              fontSize: scaleW(16),
               fontWeight: FontWeight.w300,
             ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildNoSessionState() {
-    return const Center(
+  Widget _buildNoSessionState(
+    double Function(double) scaleW,
+    double Function(double) scaleH,
+  ) {
+    return Center(
       child: Padding(
-        padding: EdgeInsets.all(24),
-        child: Icon(Icons.lock_outline, size: 64, color: AppColors.gray500),
+        padding: EdgeInsets.all(scaleW(24)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.lock_outline,
+              size: scaleW(64),
+              color: AppColors.gray500,
+            ),
+            SizedBox(height: scaleH(16)),
+            Text(
+              'No hay sesión activa',
+              style: TextStyle(
+                fontSize: scaleW(16),
+                color: AppColors.gray700,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBar(
+    double Function(double) scaleW,
+    double Function(double) scaleH,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.gray50,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(scaleW(12)),
         border: Border.all(color: AppColors.gray200),
       ),
       child: Row(
@@ -328,44 +388,51 @@ class _AssignedOrdersPageState extends State<AssignedOrdersPage> {
               onSubmitted: (_) => _onSearch(),
               decoration: InputDecoration(
                 hintText: 'Buscar pedidos, clientes o estados...',
-                hintStyle: const TextStyle(
+                hintStyle: TextStyle(
                   color: AppColors.gray500,
-                  fontSize: 14,
+                  fontSize: scaleW(14),
                 ),
-                prefixIcon: const Icon(
+                prefixIcon: Icon(
                   Icons.search,
                   color: AppColors.gray500,
-                  size: 20,
+                  size: scaleW(20),
                 ),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
                         onPressed: _onClearSearch,
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.clear,
                           color: AppColors.gray500,
-                          size: 20,
+                          size: scaleW(20),
                         ),
                       )
                     : null,
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: scaleW(16),
+                  vertical: scaleH(12),
                 ),
               ),
             ),
           ),
           Container(
-            margin: const EdgeInsets.only(right: 4),
+            margin: EdgeInsets.only(right: scaleW(4)),
             child: Material(
-              color: AppColors.blue500,
-              borderRadius: BorderRadius.circular(8),
+              color: AppColors.blue600,
+              borderRadius: BorderRadius.circular(scaleW(8)),
               child: InkWell(
                 onTap: _onSearch,
-                borderRadius: BorderRadius.circular(8),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Icon(Icons.search, color: Colors.white, size: 20),
+                borderRadius: BorderRadius.circular(scaleW(8)),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: scaleW(16),
+                    vertical: scaleH(12),
+                  ),
+                  child: Icon(
+                    Icons.search,
+                    color: Colors.white,
+                    size: scaleW(20),
+                  ),
                 ),
               ),
             ),
@@ -375,8 +442,18 @@ class _AssignedOrdersPageState extends State<AssignedOrdersPage> {
     );
   }
 
-  Widget _buildStatusFilters() {
+  Widget _buildStatusFilters(
+    double Function(double) scaleW,
+    double Function(double) scaleH,
+  ) {
     final statuses = {
+      'PROCESSING': 'Procesando',
+      'PACKED': 'Empacado',
+      'SHIPPED': 'Enviado',
+      'DELIVERED': 'Entregado',
+    };
+
+    final icons = {
       'PROCESSING': Icons.timelapse_rounded,
       'PACKED': Icons.inventory_2_rounded,
       'SHIPPED': Icons.local_shipping_rounded,
@@ -393,25 +470,24 @@ class _AssignedOrdersPageState extends State<AssignedOrdersPage> {
             return GestureDetector(
               onTap: () => _onFilter(isActive ? null : entry.key),
               child: Container(
-                margin: const EdgeInsets.only(right: 8),
-                padding: const EdgeInsets.all(10),
+                margin: EdgeInsets.only(right: scaleW(8)),
+                padding: EdgeInsets.all(scaleW(10)),
                 decoration: BoxDecoration(
                   color: isActive ? color : bg,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: color.withValues(alpha: 0.3)),
+                  borderRadius: BorderRadius.circular(scaleW(12)),
                 ),
                 child: Row(
                   children: [
                     Icon(
-                      entry.value,
+                      icons[entry.key],
                       color: isActive ? Colors.white : color,
-                      size: 18,
+                      size: scaleW(18),
                     ),
-                    const SizedBox(width: 6),
+                    SizedBox(width: scaleW(6)),
                     Text(
-                      entry.key,
+                      entry.value,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: scaleW(12),
                         fontWeight: FontWeight.w600,
                         color: isActive ? Colors.white : color,
                       ),
@@ -425,30 +501,30 @@ class _AssignedOrdersPageState extends State<AssignedOrdersPage> {
             GestureDetector(
               onTap: _onClearFilters,
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
+                padding: EdgeInsets.symmetric(
+                  horizontal: scaleW(14),
+                  vertical: scaleH(10),
                 ),
-                margin: const EdgeInsets.only(left: 8),
+                margin: EdgeInsets.only(left: scaleW(8)),
                 decoration: BoxDecoration(
                   color: AppColors.gray100,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(scaleW(12)),
                   border: Border.all(color: AppColors.gray300),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
                     Icon(
                       Icons.filter_alt_off,
                       color: AppColors.gray600,
-                      size: 18,
+                      size: scaleW(18),
                     ),
-                    SizedBox(width: 6),
+                    SizedBox(width: scaleW(6)),
                     Text(
                       'Limpiar filtros',
                       style: TextStyle(
                         color: AppColors.gray700,
                         fontWeight: FontWeight.w600,
-                        fontSize: 12,
+                        fontSize: scaleW(12),
                       ),
                     ),
                   ],
@@ -460,52 +536,106 @@ class _AssignedOrdersPageState extends State<AssignedOrdersPage> {
     );
   }
 
-  Widget _buildEmptyState(bool hasFilters) {
+  Widget _buildEmptyState(
+    bool hasFilters,
+    double Function(double) scaleW,
+    double Function(double) scaleH,
+  ) {
     return RefreshIndicator(
       onRefresh: () async => _onClearFilters(),
+      color: AppColors.blue600,
+      backgroundColor: AppColors.white,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         child: SizedBox(
-          height: MediaQuery.of(context).size.height * 0.7,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.receipt_long_outlined,
-                size: 70,
-                color: AppColors.blue600,
-              ),
-              const SizedBox(height: 20),
-              Text(
-                hasFilters
-                    ? 'No se encontraron pedidos con los filtros aplicados.'
-                    : 'No tienes pedidos activos asignados.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.gray800,
+          height: MediaQuery.of(context).size.height * 0.75,
+          child: Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: scaleW(24)),
+              child: Container(
+                padding: EdgeInsets.all(scaleW(28)),
+                decoration: BoxDecoration(
+                  color: AppColors.blue50,
+                  borderRadius: BorderRadius.circular(scaleW(20)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.shadowColor,
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(scaleW(16)),
+                      decoration: BoxDecoration(
+                        color: AppColors.blue100,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.receipt_long_outlined,
+                        size: scaleW(60),
+                        color: AppColors.blue600,
+                      ),
+                    ),
+                    SizedBox(height: scaleH(20)),
+                    Text(
+                      hasFilters
+                          ? 'No se encontraron pedidos con los filtros aplicados.'
+                          : 'No tienes pedidos activos asignados.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: scaleW(18),
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.gray800,
+                      ),
+                    ),
+                    SizedBox(height: scaleH(8)),
+                    Text(
+                      hasFilters
+                          ? 'Intenta modificar los filtros o desliza hacia abajo para actualizar.'
+                          : 'Cuando tengas pedidos activos, aparecerán aquí para su gestión.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: scaleW(14),
+                        color: AppColors.gray500,
+                        height: 1.4,
+                      ),
+                    ),
+                    SizedBox(height: scaleH(20)),
+                    if (hasFilters)
+                      ElevatedButton.icon(
+                        onPressed: _onClearFilters,
+                        icon: Icon(
+                          Icons.filter_alt_off_rounded,
+                          size: scaleW(18),
+                        ),
+                        label: Text(
+                          'Limpiar filtros',
+                          style: TextStyle(
+                            fontSize: scaleW(15),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.blue600,
+                          foregroundColor: Colors.white,
+                          elevation: 3,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: scaleW(28),
+                            vertical: scaleH(14),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(scaleW(16)),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 12),
-              if (hasFilters)
-                ElevatedButton.icon(
-                  onPressed: _onClearFilters,
-                  icon: const Icon(Icons.filter_alt_off, size: 18),
-                  label: const Text('Limpiar filtros'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.blue600,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-            ],
+            ),
           ),
         ),
       ),
@@ -523,13 +653,33 @@ class _AssignedOrdersPageState extends State<AssignedOrdersPage> {
     required int productsCount,
     required Color color,
     required Color backgroundColor,
+    required double Function(double) scaleW,
+    required double Function(double) scaleH,
   }) {
+    // Traducción del estado
+    final statusLabel =
+        {
+          'PROCESSING': 'Procesando',
+          'PACKED': 'Empacado',
+          'SHIPPED': 'Enviado',
+          'DELIVERED': 'Entregado',
+          'PENDING': 'Pendiente',
+        }[status] ??
+        status;
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(scaleW(16)),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(scaleW(16)),
         border: Border.all(color: AppColors.gray200),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowColor,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -537,72 +687,102 @@ class _AssignedOrdersPageState extends State<AssignedOrdersPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                saleReference,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: AppColors.gray900,
+              Expanded(
+                child: Text(
+                  saleReference,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: scaleW(16),
+                    color: AppColors.gray900,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
+                padding: EdgeInsets.symmetric(
+                  horizontal: scaleW(10),
+                  vertical: scaleH(4),
                 ),
                 decoration: BoxDecoration(
                   color: backgroundColor,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: color.withValues(alpha: 0.3)),
+                  borderRadius: BorderRadius.circular(scaleW(8)),
                 ),
                 child: Text(
-                  status,
+                  statusLabel,
                   style: TextStyle(
                     color: color,
                     fontWeight: FontWeight.w600,
-                    fontSize: 12,
+                    fontSize: scaleW(12),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: scaleH(8)),
           Text(
             customer,
-            style: const TextStyle(
-              fontSize: 15,
+            style: TextStyle(
+              fontSize: scaleW(15),
               color: AppColors.gray700,
               fontWeight: FontWeight.w500,
             ),
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: scaleH(8)),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                '$date • $productsCount productos',
-                style: const TextStyle(color: AppColors.gray500, fontSize: 12),
+              Flexible(
+                child: Text(
+                  '$date • $productsCount productos',
+                  style: TextStyle(
+                    color: AppColors.gray500,
+                    fontSize: scaleW(12),
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               Text(
                 total,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: AppColors.blue600,
-                  fontSize: 16,
+                  fontSize: scaleW(16),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: scaleH(12)),
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
-              onPressed: () => context.push('/main/order-detail/$id'),
+              onPressed: () async {
+                final updated = await context.push('/main/order-detail/$id');
+                if (updated == true && context.mounted && _employeeId != null) {
+                  _ordersBloc.add(
+                    LoadAssignedOrdersEvent(
+                      employeeId: _employeeId!,
+                      search: _currentSearch,
+                      page: _currentPage,
+                      status: _filterStatus,
+                    ),
+                  );
+
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Pedidos actualizados correctamente'),
+                        backgroundColor: AppColors.green600,
+                      ),
+                    );
+                  }
+                }
+              },
               style: TextButton.styleFrom(
                 foregroundColor: AppColors.blue600,
-                textStyle: const TextStyle(
+                textStyle: TextStyle(
                   fontWeight: FontWeight.w600,
-                  fontSize: 14,
+                  fontSize: scaleW(14),
                 ),
               ),
               child: const Text('Ver detalles'),
@@ -628,43 +808,54 @@ class _AssignedOrdersPageState extends State<AssignedOrdersPage> {
     }
   }
 
-  Widget _buildErrorState(String message) {
+  Widget _buildErrorState(
+    String message,
+    double Function(double) scaleW,
+    double Function(double) scaleH,
+  ) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(scaleW(24)),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: AppColors.red500),
-            const SizedBox(height: 16),
-            const Text(
+            Icon(
+              Icons.error_outline,
+              size: scaleW(64),
+              color: AppColors.red500,
+            ),
+            SizedBox(height: scaleH(16)),
+            Text(
               'Error cargando pedidos',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: scaleW(16),
                 fontWeight: FontWeight.w600,
                 color: AppColors.red600,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: scaleH(8)),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 14, color: AppColors.gray600),
+              style: TextStyle(fontSize: scaleW(14), color: AppColors.gray600),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: scaleH(16)),
             ElevatedButton.icon(
               onPressed: _onClearFilters,
-              icon: const Icon(Icons.refresh, size: 18),
-              label: const Text('Limpiar filtros y reintentar'),
+              icon: Icon(Icons.refresh, size: scaleW(18)),
+              label: Text(
+                'Limpiar filtros y reintentar',
+                style: TextStyle(fontSize: scaleW(14)),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.blue600,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
+                padding: EdgeInsets.symmetric(
+                  horizontal: scaleW(24),
+                  vertical: scaleH(12),
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(scaleW(12)),
                 ),
               ),
             ),

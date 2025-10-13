@@ -54,15 +54,25 @@ class _SearchBarWithButtonState extends State<SearchBarWithButton> {
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
-    final isSmallScreen = screenSize.width < 360;
-    final isVerySmallScreen = screenSize.width < 320;
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
+
+    double scaleW(double v) => v * (width / 390);
+    double scaleH(double v) => v * (height / 844);
 
     return Container(
       decoration: BoxDecoration(
         color: AppColors.gray50,
-        borderRadius: BorderRadius.circular(screenSize.width * 0.03),
+        borderRadius: BorderRadius.circular(scaleW(12)),
         border: Border.all(color: AppColors.gray200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -71,22 +81,24 @@ class _SearchBarWithButtonState extends State<SearchBarWithButton> {
             child: TextField(
               controller: widget.controller,
               onSubmitted: _onSubmitted,
+              style: TextStyle(fontSize: scaleW(14), color: AppColors.gray900),
               decoration: InputDecoration(
-                hintText: isVerySmallScreen
-                    ? 'Buscar productos...'
-                    : 'Buscar productos, marcas, categorías...',
+                hintText: 'Buscar productos, marcas, categorías...',
                 hintStyle: TextStyle(
                   color: AppColors.gray500,
-                  fontSize: isSmallScreen
-                      ? screenSize.width * 0.035
-                      : screenSize.width * 0.038,
+                  fontSize: scaleW(14),
                 ),
-                prefixIcon: Icon(
-                  Icons.search,
-                  color: AppColors.gray500,
-                  size: isSmallScreen
-                      ? screenSize.width * 0.045
-                      : screenSize.width * 0.05,
+                prefixIcon: Padding(
+                  padding: EdgeInsets.only(left: scaleW(12), right: scaleW(8)),
+                  child: Icon(
+                    Icons.search,
+                    color: AppColors.gray500,
+                    size: scaleW(20),
+                  ),
+                ),
+                prefixIconConstraints: BoxConstraints(
+                  minWidth: scaleW(32),
+                  minHeight: scaleW(32),
                 ),
                 suffixIcon: _hasText
                     ? IconButton(
@@ -94,18 +106,14 @@ class _SearchBarWithButtonState extends State<SearchBarWithButton> {
                         icon: Icon(
                           Icons.clear,
                           color: AppColors.gray500,
-                          size: isSmallScreen
-                              ? screenSize.width * 0.045
-                              : screenSize.width * 0.05,
+                          size: scaleW(20),
                         ),
                       )
                     : null,
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(
-                  horizontal: screenSize.width * 0.04,
-                  vertical: isSmallScreen
-                      ? screenSize.height * 0.012
-                      : screenSize.height * 0.014,
+                  horizontal: scaleW(8),
+                  vertical: scaleH(12),
                 ),
                 isDense: true,
               ),
@@ -119,16 +127,39 @@ class _SearchBarWithButtonState extends State<SearchBarWithButton> {
           ),
 
           Container(
-            margin: EdgeInsets.only(right: screenSize.width * 0.01),
+            margin: EdgeInsets.only(
+              right: scaleW(4),
+              top: scaleH(4),
+              bottom: scaleH(4),
+            ),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(scaleW(8)),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.blue600.withValues(alpha: 0.25),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
             child: Material(
-              color: widget.isLoading ? AppColors.gray400 : AppColors.blue500,
-              borderRadius: BorderRadius.circular(screenSize.width * 0.02),
+              color: AppColors.blue600,
+              borderRadius: BorderRadius.circular(scaleW(8)),
               child: InkWell(
                 onTap: widget.onSearch,
-                borderRadius: BorderRadius.circular(8),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Icon(Icons.search, color: Colors.white, size: 20),
+                borderRadius: BorderRadius.circular(scaleW(8)),
+                splashColor: Colors.white.withValues(alpha: 0.2),
+                highlightColor: Colors.white.withValues(alpha: 0.1),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: scaleW(16),
+                    vertical: scaleH(12),
+                  ),
+                  child: Icon(
+                    Icons.search,
+                    color: Colors.white,
+                    size: scaleW(20),
+                  ),
                 ),
               ),
             ),

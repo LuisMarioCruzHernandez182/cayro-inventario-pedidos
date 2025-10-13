@@ -16,6 +16,9 @@ abstract class OrdersRepository {
     String? search,
     int page,
   ]);
+  Future<Either<Failure, void>> sendTrackingEmail({
+    required Map<String, dynamic> emailData,
+  });
 
   Future<Either<Failure, OrderDetailEntity>> getOrderDetail(String id);
 

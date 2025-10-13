@@ -13,6 +13,23 @@ class OrdersRepositoryImpl implements OrdersRepository {
 
   OrdersRepositoryImpl({required this.remoteDataSource});
 
+  // 🔹 Enviar correo de rastreo completo (nuevo formato)
+  @override
+  Future<Either<Failure, void>> sendTrackingEmail({
+    required Map<String, dynamic> emailData,
+  }) async {
+    try {
+      await remoteDataSource.sendTrackingEmail(emailData: emailData);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(
+        ServerFailure('Error enviando correo de rastreo: ${e.message}'),
+      );
+    } catch (e) {
+      return Left(ServerFailure('Error inesperado: $e'));
+    }
+  }
+
   @override
   Future<Either<Failure, OrdersPageEntity>> getOrders(
     String? search,

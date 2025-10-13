@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../bloc/auth_bloc.dart';
@@ -46,6 +47,16 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     final currentIndex = _getCurrentIndex(context);
 
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: AppColors.blue600,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
+    );
+
     return BlocProvider.value(
       value: context.read<AuthBloc>(),
       child: BlocListener<AuthBloc, AuthState>(
@@ -69,42 +80,119 @@ class _MainShellState extends State<MainShell> {
           }
         },
         child: Scaffold(
-          backgroundColor: AppColors.gray50,
-          resizeToAvoidBottomInset: false,
-          body: widget.child ?? const SizedBox(),
+          backgroundColor: AppColors.blue600,
+          resizeToAvoidBottomInset: true,
+          body: AnnotatedRegion<SystemUiOverlayStyle>(
+            value: const SystemUiOverlayStyle(
+              statusBarColor: AppColors.blue600,
+              statusBarIconBrightness: Brightness.light,
+              statusBarBrightness: Brightness.dark,
+            ),
+            child: SafeArea(
+              bottom: false,
+              child: Container(
+                color: AppColors.gray50,
+                child: widget.child ?? const SizedBox(),
+              ),
+            ),
+          ),
           bottomNavigationBar: currentIndex == -1
               ? null
-              : BottomNavigationBar(
-                  currentIndex: currentIndex,
-                  onTap: _navigateToTab,
-                  type: BottomNavigationBarType.fixed,
-                  backgroundColor: AppColors.white,
-                  selectedItemColor: AppColors.blue500,
-                  unselectedItemColor: AppColors.gray400,
-                  items: const [
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.inventory_2_outlined),
-                      activeIcon: Icon(Icons.inventory_2),
-                      label: 'Inventario',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.receipt_long_outlined),
-                      activeIcon: Icon(Icons.receipt_long),
-                      label: 'Pedidos',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.assignment_ind_outlined),
-                      activeIcon: Icon(Icons.assignment_ind),
-                      label: 'Mis pedidos',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.person_outline),
-                      activeIcon: Icon(Icons.person),
-                      label: 'Perfil',
-                    ),
-                  ],
+              : Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.shadowColor,
+                        blurRadius: 8,
+                        offset: const Offset(0, -1),
+                      ),
+                    ],
+                  ),
+                  child: BottomNavigationBar(
+                    currentIndex: currentIndex,
+                    onTap: _navigateToTab,
+                    type: BottomNavigationBarType.fixed,
+                    backgroundColor: AppColors.white,
+                    elevation: 0,
+                    selectedFontSize: 0,
+                    unselectedFontSize: 0,
+                    showSelectedLabels: false,
+                    showUnselectedLabels: false,
+                    items: [
+                      _buildNavItem(
+                        index: 0,
+                        currentIndex: currentIndex,
+                        icon: Icons.inventory_2_outlined,
+                        activeIcon: Icons.inventory_2,
+                        label: 'Inventario',
+                      ),
+                      _buildNavItem(
+                        index: 1,
+                        currentIndex: currentIndex,
+                        icon: Icons.receipt_long_outlined,
+                        activeIcon: Icons.receipt_long,
+                        label: 'Pedidos',
+                      ),
+                      _buildNavItem(
+                        index: 2,
+                        currentIndex: currentIndex,
+                        icon: Icons.assignment_ind_outlined,
+                        activeIcon: Icons.assignment_ind,
+                        label: 'Mis pedidos',
+                      ),
+                      _buildNavItem(
+                        index: 3,
+                        currentIndex: currentIndex,
+                        icon: Icons.person_outline,
+                        activeIcon: Icons.person,
+                        label: 'Perfil',
+                      ),
+                    ],
+                  ),
                 ),
         ),
+      ),
+    );
+  }
+
+  BottomNavigationBarItem _buildNavItem({
+    required int index,
+    required int currentIndex,
+    required IconData icon,
+    required IconData activeIcon,
+    required String label,
+  }) {
+    final isActive = index == currentIndex;
+
+    return BottomNavigationBarItem(
+      label: '',
+      icon: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: isActive ? AppColors.blue600 : Colors.transparent,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isActive ? activeIcon : icon,
+              color: isActive ? Colors.white : AppColors.gray400,
+              size: 24,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: isActive ? AppColors.blue600 : AppColors.gray400,
+              fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -119,4 +119,14 @@ class OrdersRemoteDataSource {
       throw ServerException('Error obteniendo métricas: $e');
     }
   }
+
+  Future<void> sendTrackingEmail({
+    required Map<String, dynamic> emailData,
+  }) async {
+    try {
+      await client.postJson('$baseUrl/sales/notify', body: emailData);
+    } catch (e) {
+      throw ServerException('Error enviando correo de rastreo: $e');
+    }
+  }
 }

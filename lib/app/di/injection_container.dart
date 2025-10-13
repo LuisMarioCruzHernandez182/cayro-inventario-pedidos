@@ -2,9 +2,11 @@ import 'package:get_it/get_it.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+// 🔹 Core
 import '../../core/network/http_client.dart';
 import '../../core/constants/app_constants.dart';
 
+// 🔹 Auth
 import '../../features/auth/data/datasources/auth_local_datasource.dart';
 import '../../features/auth/data/datasources/auth_remote_datasource.dart';
 import '../../features/auth/data/repositories/auth_repository_impl.dart';
@@ -14,12 +16,14 @@ import '../../features/auth/domain/usecases/logout_usecase.dart';
 import '../../features/auth/domain/usecases/get_current_user_usecase.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 
+// 🔹 Stats
 import '../../features/stats/data/datasources/stats_remote_datasource.dart';
 import '../../features/stats/data/repositories/stats_repository_impl.dart';
 import '../../features/stats/domain/repositories/stats_repository.dart';
 import '../../features/stats/domain/usecases/get_current_month_stats_usecase.dart';
 import '../../features/stats/presentation/bloc/stats_bloc.dart';
 
+// 🔹 Inventory
 import '../../features/inventory/data/datasources/inventory_remote_datasource.dart';
 import '../../features/inventory/data/repositories/inventory_repository_impl.dart';
 import '../../features/inventory/domain/repositories/inventory_repository.dart';
@@ -30,6 +34,7 @@ import '../../features/inventory/domain/usecases/get_product_variants_usecase.da
 import '../../features/inventory/domain/usecases/update_variant_stock_usecase.dart';
 import '../../features/inventory/presentation/bloc/inventory_bloc.dart';
 
+// 🔹 Orders
 import '../../features/orders/data/datasources/orders_remote_datasource.dart';
 import '../../features/orders/data/repositories/orders_repository_impl.dart';
 import '../../features/orders/domain/repositories/orders_repository.dart';
@@ -38,23 +43,29 @@ import '../../features/orders/domain/usecases/get_orders_metrics_usecase.dart';
 import '../../features/orders/domain/usecases/get_orders_usecase.dart';
 import '../../features/orders/domain/usecases/take_order_usecase.dart';
 import '../../features/orders/domain/usecases/update_order_status_usecase.dart';
-import '../../features/orders/domain/usecases/get_assigned_orders_usecase.dart'; 
+import '../../features/orders/domain/usecases/get_assigned_orders_usecase.dart';
+import '../../features/orders/domain/usecases/send_tracking_email_usecase.dart';
 import '../../features/orders/presentation/bloc/orders_bloc.dart';
 
 final sl = GetIt.instance;
 
 Future<void> init() async {
-
+  // ---------------------------------------------------------------
+  // SharedPreferences y cliente HTTP
+  // ---------------------------------------------------------------
   final sharedPreferences = await SharedPreferences.getInstance();
   sl.registerLazySingleton<SharedPreferences>(() => sharedPreferences);
   sl.registerLazySingleton<http.Client>(() => http.Client());
 
-  sl.registerLazySingleton<AuthLocalDataSource>(
-    () => AuthLocalDataSourceImpl(sharedPreferences: sl()),
-  );
-
   sl.registerLazySingleton<HttpClient>(
     () => HttpClient(client: sl(), authLocalDataSource: sl()),
+  );
+
+  // ---------------------------------------------------------------
+  // Auth Feature
+  // ---------------------------------------------------------------
+  sl.registerLazySingleton<AuthLocalDataSource>(
+    () => AuthLocalDataSourceImpl(sharedPreferences: sl()),
   );
 
   sl.registerLazySingleton<AuthRemoteDataSource>(
@@ -80,6 +91,9 @@ Future<void> init() async {
     ),
   );
 
+  // ---------------------------------------------------------------
+  // Stats Feature
+  // ---------------------------------------------------------------
   sl.registerLazySingleton<StatsRemoteDataSource>(
     () => StatsRemoteDataSourceImpl(
       client: sl(),
@@ -95,6 +109,9 @@ Future<void> init() async {
 
   sl.registerFactory(() => StatsBloc(getCurrentMonthStatsUseCase: sl()));
 
+  // ---------------------------------------------------------------
+  // Inventory Feature
+  // ---------------------------------------------------------------
   sl.registerLazySingleton<InventoryRemoteDataSource>(
     () => InventoryRemoteDataSourceImpl(
       client: sl(),
@@ -122,6 +139,9 @@ Future<void> init() async {
     ),
   );
 
+  // ---------------------------------------------------------------
+  // Orders Feature
+  // ---------------------------------------------------------------
   sl.registerLazySingleton<OrdersRemoteDataSource>(
     () =>
         OrdersRemoteDataSource(client: sl(), baseUrl: AppConstants.fullApiUrl),
@@ -131,13 +151,16 @@ Future<void> init() async {
     () => OrdersRepositoryImpl(remoteDataSource: sl()),
   );
 
+  // 🔹 Casos de uso
   sl.registerLazySingleton(() => GetOrdersUseCase(sl()));
   sl.registerLazySingleton(() => GetOrderDetailUseCase(sl()));
   sl.registerLazySingleton(() => TakeOrderUseCase(sl()));
   sl.registerLazySingleton(() => UpdateOrderStatusUseCase(sl()));
   sl.registerLazySingleton(() => GetOrdersMetricsUseCase(sl()));
-  sl.registerLazySingleton(() => GetAssignedOrdersUseCase(sl())); 
+  sl.registerLazySingleton(() => GetAssignedOrdersUseCase(sl()));
+  sl.registerLazySingleton(() => SendTrackingEmailUseCase(sl())); // 👈 Nuevo
 
+  // 🔹 Bloc
   sl.registerFactory(
     () => OrdersBloc(
       getOrders: sl(),
@@ -145,7 +168,8 @@ Future<void> init() async {
       takeOrder: sl(),
       updateStatus: sl(),
       getMetrics: sl(),
-      getAssignedOrders: sl(), 
+      getAssignedOrders: sl(),
+      sendTrackingEmail: sl(), 
     ),
   );
 }

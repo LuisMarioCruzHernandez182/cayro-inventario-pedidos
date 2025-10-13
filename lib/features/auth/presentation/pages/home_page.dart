@@ -9,178 +9,155 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
-    final isSmallScreen = screenSize.height < 700;
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
+
+    double scaleW(double value) => value * (width / 390);
+    double scaleH(double value) => value * (height / 844);
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [AppColors.blue600, AppColors.blue500, AppColors.blue400],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                flex: isSmallScreen ? 8 : 7,
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: screenSize.width * 0.06,
-                  ),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        SizedBox(height: screenSize.height * 0.02),
-                        Image.asset(
-                          'assets/images/logo.png',
-                          height: screenSize.height * 0.08,
-                          fit: BoxFit.contain,
-                        ),
-                        SizedBox(height: screenSize.height * 0.02),
+      backgroundColor: AppColors.blue600,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(
+                  horizontal: scaleW(24),
+                  vertical: scaleH(16),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(height: scaleH(20)),
 
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            AppStrings.hello,
-                            style: TextStyle(
-                              fontSize:
-                                  screenSize.width *
-                                  0.1, // 10% del ancho de pantalla
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        SizedBox(height: screenSize.height * 0.01),
-
-                        Text(
-                          AppStrings.welcomeToCayro,
-                          style: TextStyle(
-                            fontSize:
-                                screenSize.width *
-                                0.05, // 5% del ancho de pantalla
-                            color: Colors.white70,
-                            fontWeight: FontWeight.w300,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        SizedBox(height: screenSize.height * 0.03),
-
-                        SizedBox(
-                          height: screenSize.height * 0.3,
-                          width: double.infinity,
-                          child: Stack(
-                            children: [
-                              Center(
-                                child: Image.asset(
-                                  'assets/images/Logistics.png',
-                                  height: screenSize.height * 0.35,
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
-                              Positioned(
-                                top: screenSize.height * 0.01,
-                                right: screenSize.width * 0.05,
-                                child: CircleAvatar(
-                                  radius: screenSize.width * 0.04,
-                                  backgroundColor: Colors.white,
-                                  child: Icon(
-                                    Icons.check_circle,
-                                    color: Colors.green,
-                                    size: screenSize.width * 0.045,
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                bottom: screenSize.height * 0.01,
-                                left: screenSize.width * 0.05,
-                                child: CircleAvatar(
-                                  radius: screenSize.width * 0.04,
-                                  backgroundColor: Colors.white,
-                                  child: Icon(
-                                    Icons.inventory_2,
-                                    color: Colors.orange,
-                                    size: screenSize.width * 0.045,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                    /// LOGO
+                    Image.asset(
+                      'assets/images/logo.png',
+                      height: scaleH(70),
+                      fit: BoxFit.contain,
                     ),
-                  ),
+
+                    SizedBox(height: scaleH(20)),
+
+                    Text(
+                      AppStrings.hello,
+                      style: TextStyle(
+                        fontSize: scaleW(44),
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: scaleH(8)),
+                    Text(
+                      AppStrings.welcomeToCayro,
+                      style: TextStyle(
+                        fontSize: scaleW(20),
+                        color: Colors.white70,
+                        fontWeight: FontWeight.w300,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+
+                    SizedBox(height: scaleH(28)),
+
+                    SizedBox(
+                      height: scaleH(250),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Image.asset(
+                            'assets/images/Logistics.png',
+                            height: scaleH(280),
+                            fit: BoxFit.contain,
+                          ),
+                          Positioned(
+                            top: scaleH(10),
+                            right: scaleW(30),
+                            child: CircleAvatar(
+                              radius: scaleW(20),
+                              backgroundColor: Colors.white,
+                              child: Icon(
+                                Icons.check_circle,
+                                color: Colors.green,
+                                size: scaleW(22),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: scaleH(10),
+                            left: scaleW(30),
+                            child: CircleAvatar(
+                              radius: scaleW(20),
+                              backgroundColor: Colors.white,
+                              child: Icon(
+                                Icons.inventory_2,
+                                color: Colors.orange,
+                                size: scaleW(22),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: scaleH(160)),
+                  ],
                 ),
               ),
+            ),
 
-              Expanded(
-                flex: isSmallScreen ? 4 : 3,
-                child: Container(
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(32),
-                      topRight: Radius.circular(32),
-                    ),
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      screenSize.width * 0.06,
-                      screenSize.height * 0.02,
-                      screenSize.width * 0.06,
-                      screenSize.height * 0.02,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Center(
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              AppStrings.inventoryManagement,
-                              style: TextStyle(
-                                fontSize: screenSize.width * 0.065,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.gray900,
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: screenSize.height * 0.015),
-                        Expanded(
-                          child: SingleChildScrollView(
-                            child: Text(
-                              AppStrings.inventoryDescription,
-                              style: TextStyle(
-                                fontSize: screenSize.width * 0.04,
-                                color: AppColors.gray600,
-                                height: 1.4,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: screenSize.height * 0.02),
-                        PrimaryButton(
-                          text: AppStrings.getStarted,
-                          onPressed: () {
-                            context.go("/login");
-                          },
-                        ),
-                      ],
-                    ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.fromLTRB(
+                  scaleW(24),
+                  scaleH(20),
+                  scaleW(24),
+                  scaleH(16),
+                ),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(32),
+                    topRight: Radius.circular(32),
                   ),
                 ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      AppStrings.inventoryManagement,
+                      style: TextStyle(
+                        fontSize: scaleW(26),
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.gray900,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: scaleH(15)),
+                    Text(
+                      AppStrings.inventoryDescription,
+                      style: TextStyle(
+                        fontSize: scaleW(16),
+                        color: AppColors.gray600,
+                        height: 1.4,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: scaleH(25)),
+                    PrimaryButton(
+                      text: AppStrings.getStarted,
+                      onPressed: () => context.go("/login"),
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

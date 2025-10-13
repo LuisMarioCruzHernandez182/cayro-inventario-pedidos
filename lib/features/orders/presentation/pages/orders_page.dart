@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:stock_control_app/features/orders/presentation/pages/widgets/pagination_controls.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../app/di/injection_container.dart';
 import '../bloc/orders_bloc.dart';
@@ -20,7 +19,6 @@ class _OrdersPageState extends State<OrdersPage> {
   int _currentPage = 1;
   String? _currentSearch;
   bool _hasFilters = false;
-
   late OrdersBloc _ordersBloc;
 
   @override
@@ -76,210 +74,200 @@ class _OrdersPageState extends State<OrdersPage> {
     _scrollToTop();
   }
 
-  void _onPageChanged(int page) {
-    setState(() => _currentPage = page);
-    _ordersBloc.add(
-      LoadOrdersEvent(search: _currentSearch, page: page, status: 'PENDING'),
-    );
-    _scrollToTop();
-  }
-
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
+    double scaleW(double v) => v * (width / 390);
+    double scaleH(double v) => v * (height / 844);
+
     return BlocProvider(
       create: (_) => _ordersBloc,
       child: Scaffold(
-        backgroundColor: Colors.white,
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.blue600, AppColors.blue500, AppColors.blue400],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-          ),
-          child: SafeArea(
-            child: Column(
-              children: [
-                _buildHeader(),
-                Expanded(
-                  child: Container(
-                    width: double.infinity,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(32),
-                        topRight: Radius.circular(32),
-                      ),
+        backgroundColor: AppColors.blue600,
+        body: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(scaleW, scaleH),
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(scaleW(32)),
+                      topRight: Radius.circular(scaleW(32)),
                     ),
-                    child: RefreshIndicator(
-                      onRefresh: () async {
-                        _ordersBloc.add(const LoadMetricsEvent());
-                        _ordersBloc.add(
-                          LoadOrdersEvent(
-                            search: _currentSearch,
-                            page: 1,
-                            status: 'PENDING',
+                  ),
+                  child: RefreshIndicator(
+                    onRefresh: () async {
+                      _ordersBloc.add(const LoadMetricsEvent());
+                      _ordersBloc.add(
+                        LoadOrdersEvent(
+                          search: _currentSearch,
+                          page: 1,
+                          status: 'PENDING',
+                        ),
+                      );
+                    },
+                    child: CustomScrollView(
+                      controller: _scrollController,
+                      slivers: [
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: EdgeInsets.fromLTRB(
+                              scaleW(20),
+                              scaleH(20),
+                              scaleW(20),
+                              scaleH(16),
+                            ),
+                            child: _buildSearchBar(scaleW, scaleH),
                           ),
-                        );
-                      },
-                      child: CustomScrollView(
-                        controller: _scrollController,
-                        slivers: [
-                          SliverToBoxAdapter(
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(
-                                20,
-                                20,
-                                20,
-                                16,
-                              ),
-                              child: _buildSearchBar(),
+                        ),
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: scaleW(20),
+                            ),
+                            child: BlocBuilder<OrdersBloc, OrdersState>(
+                              buildWhen: (p, c) => c is OrdersMetricsLoaded,
+                              builder: (context, state) {
+                                if (state is OrdersMetricsLoaded) {
+                                  return _buildMetricsSection(
+                                    state,
+                                    scaleW,
+                                    scaleH,
+                                  );
+                                }
+                                return const SizedBox.shrink();
+                              },
                             ),
                           ),
-
-                          SliverToBoxAdapter(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                              ),
-                              child: BlocBuilder<OrdersBloc, OrdersState>(
-                                buildWhen: (p, c) => c is OrdersMetricsLoaded,
-                                builder: (context, state) {
-                                  if (state is OrdersMetricsLoaded) {
-                                    return _buildMetricsSection(state);
-                                  }
-                                  return const SizedBox.shrink();
-                                },
-                              ),
-                            ),
-                          ),
-
-                          // 📦 Lista de pedidos
-                          BlocBuilder<OrdersBloc, OrdersState>(
-                            buildWhen: (p, c) =>
-                                c is OrdersLoaded ||
-                                c is OrdersLoading ||
-                                c is OrdersError,
-                            builder: (context, state) {
-                              if (state is OrdersLoading) {
-                                return const SliverFillRemaining(
-                                  child: Center(
-                                    child: CircularProgressIndicator(),
+                        ),
+                        BlocBuilder<OrdersBloc, OrdersState>(
+                          buildWhen: (p, c) =>
+                              c is OrdersLoaded ||
+                              c is OrdersLoading ||
+                              c is OrdersError,
+                          builder: (context, state) {
+                            if (state is OrdersLoading) {
+                              return SliverFillRemaining(
+                                child: Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      CircularProgressIndicator(
+                                        color: AppColors.blue600,
+                                        strokeWidth: scaleW(3),
+                                      ),
+                                      SizedBox(height: scaleH(16)),
+                                      Text(
+                                        "Cargando pedidos...",
+                                        style: TextStyle(
+                                          color: AppColors.blue600,
+                                          fontSize: scaleW(16),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                );
-                              } else if (state is OrdersError) {
-                                return SliverFillRemaining(
-                                  child: Center(
+                                ),
+                              );
+                            } else if (state is OrdersError) {
+                              return SliverFillRemaining(
+                                child: Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(scaleW(20)),
                                     child: Text(
                                       state.message,
                                       style: TextStyle(
                                         color: AppColors.red500,
-                                        fontSize: 16,
+                                        fontSize: scaleW(16),
                                         fontWeight: FontWeight.w500,
                                       ),
+                                      textAlign: TextAlign.center,
                                     ),
                                   ),
-                                );
-                              } else if (state is OrdersLoaded) {
-                                if (state.orders.isEmpty) {
-                                  return SliverFillRemaining(
-                                    child: _buildEmptyState(),
-                                  );
-                                }
-                                return SliverList(
-                                  delegate: SliverChildBuilderDelegate((
-                                    context,
-                                    i,
-                                  ) {
-                                    final o = state.orders[i];
-                                    final color = _statusColor(o.status);
-                                    return Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 20,
-                                        vertical: 6,
-                                      ),
-                                      child: _buildOrderCard(
-                                        context,
-                                        id: o.id,
-                                        saleReference: o.saleReference,
-                                        customer: o.userName,
-                                        total:
-                                            '\$${o.totalAmount.toStringAsFixed(2)}',
-                                        date: o.createdAt,
-                                        status: o.status,
-                                        productsCount: o.productsCount,
-                                        employee:
-                                            o.employeeName ?? 'Sin asignar',
-                                        color: color.$1,
-                                        backgroundColor: color.$2,
-                                      ),
-                                    );
-                                  }, childCount: state.orders.length),
+                                ),
+                              );
+                            } else if (state is OrdersLoaded) {
+                              if (state.orders.isEmpty) {
+                                return SliverFillRemaining(
+                                  child: _buildEmptyState(scaleW, scaleH),
                                 );
                               }
-                              return const SliverFillRemaining(
-                                child: SizedBox.shrink(),
+                              return SliverList(
+                                delegate: SliverChildBuilderDelegate((
+                                  context,
+                                  i,
+                                ) {
+                                  final o = state.orders[i];
+                                  final color = _statusColor(o.status);
+                                  return Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: scaleW(20),
+                                      vertical: scaleH(6),
+                                    ),
+                                    child: _buildOrderCard(
+                                      context,
+                                      id: o.id,
+                                      saleReference: o.saleReference,
+                                      customer: o.userName,
+                                      total:
+                                          '\$${o.totalAmount.toStringAsFixed(2)}',
+                                      date: o.createdAt,
+                                      status: o.status,
+                                      productsCount: o.productsCount,
+                                      employee: o.employeeName ?? 'Sin asignar',
+                                      color: color.$1,
+                                      backgroundColor: color.$2,
+                                      scaleW: scaleW,
+                                      scaleH: scaleH,
+                                    ),
+                                  );
+                                }, childCount: state.orders.length),
                               );
-                            },
-                          ),
-
-                          SliverToBoxAdapter(
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(
-                                20,
-                                24,
-                                20,
-                                40,
-                              ),
-                              child: BlocBuilder<OrdersBloc, OrdersState>(
-                                buildWhen: (p, c) => c is OrdersLoaded,
-                                builder: (context, s) {
-                                  if (s is OrdersLoaded) {
-                                    return OrdersPaginationControls(
-                                      currentPage: _currentPage,
-                                      totalPages: s.totalPages,
-                                      isLoading: s is OrdersLoading,
-                                      onPageChanged: _onPageChanged,
-                                    );
-                                  }
-                                  return const SizedBox.shrink();
-                                },
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                            }
+                            return const SliverFillRemaining(
+                              child: SizedBox.shrink(),
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(
+    double Function(double) scaleW,
+    double Function(double) scaleH,
+  ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 20),
+      padding: EdgeInsets.symmetric(vertical: scaleH(20)),
       child: Column(
         children: [
-          const Text(
+          Text(
             'Pedidos Pendientes',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 28,
+              fontSize: scaleW(26),
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: scaleH(8)),
           Text(
             'Gestiona los pedidos nuevos que aún no han sido tomados',
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.9),
-              fontSize: 16,
+              color: Colors.white,
+              fontSize: scaleW(14),
               fontWeight: FontWeight.w300,
             ),
             textAlign: TextAlign.center,
@@ -289,39 +277,50 @@ class _OrdersPageState extends State<OrdersPage> {
     );
   }
 
-  Widget _buildMetricsSection(OrdersMetricsLoaded state) {
+  Widget _buildMetricsSection(
+    OrdersMetricsLoaded state,
+    double Function(double) scaleW,
+    double Function(double) scaleH,
+  ) {
     return Row(
       children: [
         Expanded(
           child: _buildStatCard(
-            title: 'Pedidos Pendientes',
+            title: 'Pendientes',
             value: '${state.statusCount['PENDING'] ?? 0}',
             subtitle: 'Esperando asignación',
             color: AppColors.amber600,
             backgroundColor: AppColors.amber50,
             icon: Icons.access_time,
+            scaleW: scaleW,
+            scaleH: scaleH,
           ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: scaleW(12)),
         Expanded(
           child: _buildStatCard(
-            title: 'Pedidos en Proceso',
+            title: 'En Proceso',
             value: '${state.statusCount['PROCESSING'] ?? 0}',
             subtitle: 'Tomados por empleados',
-            color: AppColors.blue500,
+            color: AppColors.blue600,
             backgroundColor: AppColors.blue50,
             icon: Icons.work_outline,
+            scaleW: scaleW,
+            scaleH: scaleH,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBar(
+    double Function(double) scaleW,
+    double Function(double) scaleH,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.gray50,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(scaleW(12)),
         border: Border.all(color: AppColors.gray200),
       ),
       child: Row(
@@ -332,41 +331,51 @@ class _OrdersPageState extends State<OrdersPage> {
               onSubmitted: (_) => _onSearch(),
               decoration: InputDecoration(
                 hintText: 'Buscar pedidos o clientes...',
-                hintStyle: TextStyle(color: AppColors.gray500, fontSize: 14),
-                prefixIcon: const Icon(
+                hintStyle: TextStyle(
+                  color: AppColors.gray500,
+                  fontSize: scaleW(14),
+                ),
+                prefixIcon: Icon(
                   Icons.search,
                   color: AppColors.gray500,
-                  size: 20,
+                  size: scaleW(20),
                 ),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
                         onPressed: _onClearFilters,
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.clear,
                           color: AppColors.gray500,
-                          size: 20,
+                          size: scaleW(20),
                         ),
                       )
                     : null,
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: scaleW(16),
+                  vertical: scaleH(12),
                 ),
               ),
             ),
           ),
           Container(
-            margin: const EdgeInsets.only(right: 4),
+            margin: EdgeInsets.only(right: scaleW(4)),
             child: Material(
-              color: AppColors.blue500,
-              borderRadius: BorderRadius.circular(8),
+              color: AppColors.blue600,
+              borderRadius: BorderRadius.circular(scaleW(8)),
               child: InkWell(
                 onTap: _onSearch,
-                borderRadius: BorderRadius.circular(8),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Icon(Icons.search, color: Colors.white, size: 20),
+                borderRadius: BorderRadius.circular(scaleW(8)),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: scaleW(16),
+                    vertical: scaleH(12),
+                  ),
+                  child: Icon(
+                    Icons.search,
+                    color: Colors.white,
+                    size: scaleW(20),
+                  ),
                 ),
               ),
             ),
@@ -376,92 +385,98 @@ class _OrdersPageState extends State<OrdersPage> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(
+    double Function(double) scaleW,
+    double Function(double) scaleH,
+  ) {
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
-      child: Container(
-        width: double.infinity,
-        height: MediaQuery.of(context).size.height * 0.7,
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(26),
-              decoration: BoxDecoration(
-                color: AppColors.blue50,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.blue400.withValues(alpha: 0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.receipt_long_outlined,
-                size: 70,
-                color: AppColors.blue600,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              _hasFilters
-                  ? 'No se encontraron pedidos con los filtros aplicados.'
-                  : 'No se encontraron pedidos pendientes.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: AppColors.gray800,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              _hasFilters
-                  ? 'Puedes limpiar los filtros para volver a ver todos los pedidos pendientes.'
-                  : 'Agrega pedidos o verifica la conexión al servidor.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 15,
-                color: AppColors.gray600,
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 32),
-            if (_hasFilters)
-              ElevatedButton.icon(
-                onPressed: _onClearFilters,
-                icon: const Icon(
-                  Icons.filter_alt_off_rounded,
-                  color: Colors.white,
-                  size: 22,
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: scaleW(24),
+          vertical: scaleH(60),
+        ),
+        child: Center(
+          child: Container(
+            padding: EdgeInsets.all(scaleW(28)),
+            decoration: BoxDecoration(
+              color: AppColors.blue50,
+              borderRadius: BorderRadius.circular(scaleW(20)),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.shadowColor,
+                  blurRadius: 10,
+                  offset: Offset(0, 4),
                 ),
-                label: const Text(
-                  'Limpiar filtros',
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(scaleW(16)),
+                  decoration: BoxDecoration(
+                    color: AppColors.blue100,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.receipt_long_outlined,
+                    size: scaleW(60),
+                    color: AppColors.blue600,
+                  ),
+                ),
+                SizedBox(height: scaleH(20)),
+                Text(
+                  _hasFilters
+                      ? 'No se encontraron pedidos con los filtros aplicados.'
+                      : 'No hay pedidos pendientes por el momento.',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.3,
+                    fontSize: scaleW(18),
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.gray800,
                   ),
                 ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.blue600,
-                  elevation: 8,
-                  shadowColor: AppColors.blue400.withValues(alpha: 0.4),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 30,
-                    vertical: 16,
+                SizedBox(height: scaleH(8)),
+                Text(
+                  _hasFilters
+                      ? 'Ajusta o limpia los filtros para ver más resultados.'
+                      : 'Cuando existan pedidos pendientes, aparecerán aquí para su gestión.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: scaleW(14),
+                    color: AppColors.gray500,
+                    height: 1.4,
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  foregroundColor: Colors.white,
                 ),
-              ),
-          ],
+                SizedBox(height: scaleH(20)),
+                if (_hasFilters)
+                  ElevatedButton.icon(
+                    onPressed: _onClearFilters,
+                    icon: Icon(Icons.filter_alt_off_rounded, size: scaleW(18)),
+                    label: Text(
+                      'Limpiar filtros',
+                      style: TextStyle(
+                        fontSize: scaleW(15),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.blue600,
+                      foregroundColor: Colors.white,
+                      elevation: 3,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: scaleW(28),
+                        vertical: scaleH(14),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(scaleW(16)),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -474,26 +489,27 @@ class _OrdersPageState extends State<OrdersPage> {
     required Color color,
     required Color backgroundColor,
     required IconData icon,
+    required double Function(double) scaleW,
+    required double Function(double) scaleH,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(scaleW(16)),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
+        borderRadius: BorderRadius.circular(scaleW(16)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, color: color, size: 20),
-              const SizedBox(width: 8),
+              Icon(icon, color: color, size: scaleW(20)),
+              SizedBox(width: scaleW(8)),
               Expanded(
                 child: Text(
                   title,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: scaleW(12),
                     fontWeight: FontWeight.w600,
                     color: color,
                   ),
@@ -501,23 +517,19 @@ class _OrdersPageState extends State<OrdersPage> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: scaleW(8)),
           Text(
             value,
             style: TextStyle(
-              fontSize: 24,
+              fontSize: scaleW(22),
               fontWeight: FontWeight.bold,
               color: color,
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: scaleW(4)),
           Text(
             subtitle,
-            style: TextStyle(
-              fontSize: 11,
-              color: color.withValues(alpha: 0.7),
-              fontWeight: FontWeight.w500,
-            ),
+            style: TextStyle(fontSize: scaleW(11), fontWeight: FontWeight.w500),
           ),
         ],
       ),
@@ -536,13 +548,32 @@ class _OrdersPageState extends State<OrdersPage> {
     required String employee,
     required Color color,
     required Color backgroundColor,
+    required double Function(double) scaleW,
+    required double Function(double) scaleH,
   }) {
+    final statusLabel =
+        {
+          'PENDING': 'Pendiente',
+          'PROCESSING': 'Procesando',
+          'PACKED': 'Empacado',
+          'SHIPPED': 'Enviado',
+          'DELIVERED': 'Entregado',
+        }[status] ??
+        status;
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(scaleW(16)),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(scaleW(16)),
         border: Border.all(color: AppColors.gray200),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowColor,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -550,88 +581,107 @@ class _OrdersPageState extends State<OrdersPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                saleReference,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: AppColors.gray900,
+              Expanded(
+                child: Text(
+                  saleReference,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: scaleW(16),
+                    color: AppColors.gray900,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
+                padding: EdgeInsets.symmetric(
+                  horizontal: scaleW(10),
+                  vertical: scaleH(4),
                 ),
                 decoration: BoxDecoration(
                   color: backgroundColor,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: color.withValues(alpha: 0.3)),
+                  borderRadius: BorderRadius.circular(scaleW(8)),
                 ),
                 child: Text(
-                  status,
+                  statusLabel,
                   style: TextStyle(
                     color: color,
                     fontWeight: FontWeight.w600,
-                    fontSize: 12,
+                    fontSize: scaleW(12),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: scaleH(8)),
           Text(
             customer,
-            style: const TextStyle(
-              fontSize: 15,
+            style: TextStyle(
+              fontSize: scaleW(15),
               color: AppColors.gray700,
               fontWeight: FontWeight.w500,
             ),
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: scaleH(8)),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '$date • $productsCount productos',
-                    style: const TextStyle(
-                      color: AppColors.gray500,
-                      fontSize: 12,
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '$date • $productsCount productos',
+                      style: TextStyle(
+                        color: AppColors.gray500,
+                        fontSize: scaleW(12),
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Asignado a: $employee',
-                    style: const TextStyle(
-                      color: AppColors.gray600,
-                      fontSize: 12,
+                    SizedBox(height: scaleH(4)),
+                    Text(
+                      'Asignado a: $employee',
+                      style: TextStyle(
+                        color: AppColors.gray600,
+                        fontSize: scaleW(12),
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               Text(
                 total,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: AppColors.blue600,
-                  fontSize: 16,
+                  fontSize: scaleW(16),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: scaleH(12)),
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
-              onPressed: () => context.push('/order-detail/$id'),
+              onPressed: () async {
+                final updated = await context.push('/order-detail/$id');
+                if (updated == true && context.mounted) {
+                  _ordersBloc.add(
+                    LoadOrdersEvent(
+                      search: _currentSearch,
+                      page: _currentPage,
+                      status: 'PENDING',
+                    ),
+                  );
+                  _ordersBloc.add(const LoadMetricsEvent());
+                }
+              },
               style: TextButton.styleFrom(
                 foregroundColor: AppColors.blue600,
-                textStyle: const TextStyle(
+                textStyle: TextStyle(
                   fontWeight: FontWeight.w600,
-                  fontSize: 14,
+                  fontSize: scaleW(14),
                 ),
               ),
               child: const Text('Ver detalles'),
@@ -645,7 +695,15 @@ class _OrdersPageState extends State<OrdersPage> {
   (Color, Color) _statusColor(String status) {
     switch (status.toUpperCase()) {
       case 'PENDING':
-        return (AppColors.amber500, AppColors.amber50);
+        return (AppColors.amber600, AppColors.amber50);
+      case 'PROCESSING':
+        return (AppColors.blue600, AppColors.blue50);
+      case 'PACKED':
+        return (AppColors.blue600, AppColors.blue100);
+      case 'SHIPPED':
+        return (AppColors.purple600, AppColors.purple100);
+      case 'DELIVERED':
+        return (AppColors.green600, AppColors.green50);
       default:
         return (AppColors.gray700, AppColors.gray100);
     }
