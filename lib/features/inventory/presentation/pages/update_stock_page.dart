@@ -93,8 +93,8 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       );
                     }
